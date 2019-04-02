@@ -622,15 +622,11 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       break;
     }
 #if INCLUDE_SHENANDOAHGC
-    case Op_ShenandoahReadBarrier:
-    case Op_ShenandoahWriteBarrier:
-      // Barriers 'pass through' its arguments. I.e. what goes in, comes out.
-      // It doesn't escape.
-      add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(ShenandoahBarrierNode::ValueIn), delayed_worklist);
-      break;
     case Op_ShenandoahEnqueueBarrier:
       add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(1), delayed_worklist);
       break;
+    case Op_ShenandoahLoadReferenceBarrier:
+      add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(ShenandoahLoadReferenceBarrierNode::ValueIn), delayed_worklist);
 #endif
     default:
       ; // Do nothing for nodes not related to EA.
@@ -859,14 +855,11 @@ void ConnectionGraph::add_final_edges(Node *n) {
       break;
     }
 #if INCLUDE_SHENANDOAHGC
-    case Op_ShenandoahReadBarrier:
-    case Op_ShenandoahWriteBarrier:
-      // Barriers 'pass through' its arguments. I.e. what goes in, comes out.
-      // It doesn't escape.
-      add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(ShenandoahBarrierNode::ValueIn), NULL);
-      break;
     case Op_ShenandoahEnqueueBarrier:
       add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(1), NULL);
+      break;
+    case Op_ShenandoahLoadReferenceBarrier:
+      add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(ShenandoahLoadReferenceBarrierNode::ValueIn), NULL);
       break;
 #endif
     default: {
@@ -2430,7 +2423,7 @@ Node* ConnectionGraph::get_addp_base(Node *addp) {
              opcode == Op_CastX2P || uncast_base->is_DecodeNarrowPtr() ||
              (uncast_base->is_Mem() && (uncast_base->bottom_type()->isa_rawptr() != NULL)) ||
              (uncast_base->is_Proj() && uncast_base->in(0)->is_Allocate()) ||
-             uncast_base->is_ShenandoahBarrier(), "sanity");
+             uncast_base->Opcode() == Op_ShenandoahLoadReferenceBarrier, "sanity");
     }
   }
   return base;
@@ -3163,7 +3156,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
                n->is_CheckCastPP() ||
                n->is_EncodeP() ||
                n->is_DecodeN() ||
-               n->is_ShenandoahBarrier() ||
+               n->Opcode() == Op_ShenandoahLoadReferenceBarrier ||
                (n->is_ConstraintCast() && n->Opcode() == Op_CastPP)) {
       if (visited.test_set(n->_idx)) {
         assert(n->is_Phi(), "loops only through Phi's");
@@ -3234,7 +3227,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
                  use->is_CheckCastPP() ||
                  use->is_EncodeNarrowPtr() ||
                  use->is_DecodeNarrowPtr() ||
-                 use->is_ShenandoahBarrier() ||
+                 use->Opcode() == Op_ShenandoahLoadReferenceBarrier ||
                  (use->is_ConstraintCast() && use->Opcode() == Op_CastPP)) {
         alloc_worklist.append_if_missing(use);
 #ifdef ASSERT
@@ -3265,7 +3258,6 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
               op == Op_FastLock || op == Op_AryEq || op == Op_StrComp || op == Op_HasNegatives ||
               op == Op_StrCompressedCopy || op == Op_StrInflatedCopy ||
               op == Op_StrEquals || op == Op_StrIndexOf || op == Op_StrIndexOfChar ||
-              op == Op_ShenandoahWBMemProj ||
               BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(use))) {
           n->dump();
           use->dump();

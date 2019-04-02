@@ -440,7 +440,10 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
       } else if (val->is_Store()) {
         Node* n = val->in(MemNode::ValueIn);
 #if INCLUDE_SHENANDOAHGC
-        n = ShenandoahBarrierNode::skip_through_barrier(n);
+        if (UseShenandoahGC) {
+          BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+          n = bs->step_over_gc_barrier(n);
+        }
 #endif
         values.at_put(j, n);
       } else if(val->is_Proj() && val->in(0) == alloc) {
@@ -556,7 +559,10 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
     } else if (mem->is_Store()) {
       Node* n = mem->in(MemNode::ValueIn);
 #if INCLUDE_SHENANDOAHGC
-      n = ShenandoahBarrierNode::skip_through_barrier(n);
+      if (UseShenandoahGC) {
+        BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+        n = bs->step_over_gc_barrier(n);
+      }
 #endif
       return n;
     } else if (mem->is_Phi()) {

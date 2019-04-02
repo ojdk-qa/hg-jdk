@@ -1019,32 +1019,12 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
         Node* u = outer->fast_out(i);
         assert(u == outer || u == inner || u->is_Phi(), "nothing between inner and outer loop");
       }
-      Node* c = inner_out;
       uint stores = 0;
-      for (;;) {
-        for (DUIterator_Fast imax, i = c->fast_outs(imax); i < imax; i++) {
-          Node* u = c->fast_out(i);
-          if (u->is_Store()) {
-            stores++;
-          }
+      for (DUIterator_Fast imax, i = inner_out->fast_outs(imax); i < imax; i++) {
+        Node* u = inner_out->fast_out(i);
+        if (u->is_Store()) {
+          stores++;
         }
-        if (c->in(0)->is_CountedLoopEnd() || !UseShenandoahGC) {
-          break;
-        }
-#if INCLUDE_SHENANDOAHGC
-        assert(UseShenandoahGC, "only for shenandoah barriers");
-        assert(c->is_Region() && c->req() == 3, "region that ends barrier");
-        uint j = 1;
-        uint req = c->req();
-        for (; j < req; j++) {
-          Node* in = c->in(j);
-          if (in->is_IfProj() && ShenandoahWriteBarrierNode::is_heap_stable_test(in->in(0))) {
-            c = in->in(0)->in(0);
-            break;
-          }
-        }
-        assert(j < req, "should have found heap stable test");
-#endif
       }
       assert(outer->outcnt() >= phis + 2 && outer->outcnt() <= phis + 2 + stores + 1, "only phis");
     }
@@ -2943,25 +2923,6 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
   }
 #endif
 
-#if INCLUDE_SHENANDOAHGC
-  if (mode == LoopOptsShenandoahExpand) {
-    assert(UseShenandoahGC, "only for shenandoah");
-    ShenandoahWriteBarrierNode::pin_and_expand(this);
-  } else if (mode == LoopOptsShenandoahPostExpand) {
-    assert(UseShenandoahGC, "only for shenandoah");
-    visited.Clear();
-    ShenandoahWriteBarrierNode::optimize_after_expansion(visited, nstack, worklist, this);
-  }
-
-  if (shenandoah_opts) {
-    _igvn.optimize();
-    if (C->log() != NULL) {
-      log_loop_tree(_ltree_root, _ltree_root, C->log());
-    }
-    return;
-  }
-#endif
-
   if (skip_loop_opts) {
     // restore major progress flag
     for (int i = 0; i < old_progress; i++) {
@@ -2978,9 +2939,12 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
   }
 
 #if INCLUDE_SHENANDOAHGC
-  if (UseShenandoahGC) {
-    GrowableArray<MemoryGraphFixer*> memory_graph_fixers;
-    ShenandoahWriteBarrierNode::optimize_before_expansion(this, memory_graph_fixers, false);
+  if (UseShenandoahGC && ((ShenandoahBarrierSetC2*) BarrierSet::barrier_set()->barrier_set_c2())->optimize_loops(this, mode, visited, nstack, worklist)) {
+    _igvn.optimize();
+    if (C->log() != NULL) {
+      log_loop_tree(_ltree_root, _ltree_root, C->log());
+    }
+    return;
   }
 #endif
 
@@ -4280,11 +4244,6 @@ void PhaseIdealLoop::build_loop_late_post(Node *n, bool verify_strip_mined) {
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
-#if INCLUDE_SHENANDOAHGC
-    case Op_ShenandoahReadBarrier:
-    case Op_ShenandoahWriteBarrier:
-    case Op_ShenandoahWBMemProj:
-#endif
     case Op_HasNegatives:
       pinned = false;
     }
@@ -4399,16 +4358,6 @@ void PhaseIdealLoop::build_loop_late_post(Node *n, bool verify_strip_mined) {
   IdealLoopTree *chosen_loop = get_loop(least);
   if( !chosen_loop->_child )   // Inner loop?
     chosen_loop->_body.push(n);// Collect inner loops
-
-  if (n->Opcode() == Op_ShenandoahWriteBarrier) {
-    // The write barrier and its memory proj must have the same
-    // control otherwise some loop opts could put nodes (Phis) between
-    // them
-    Node* proj = n->find_out_with(Op_ShenandoahWBMemProj);
-    if (proj != NULL) {
-      set_ctrl_and_loop(proj, least);
-    }
-  }
 }
 
 #ifdef ASSERT

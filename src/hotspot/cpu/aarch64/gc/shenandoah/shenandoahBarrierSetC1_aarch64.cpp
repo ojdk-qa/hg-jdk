@@ -62,6 +62,10 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess& access, LI
   BasicType bt = access.type();
   if (access.is_oop()) {
     LIRGenerator *gen = access.gen();
+    if (ShenandoahSATBBarrier) {
+      pre_barrier(gen, access.access_emit_info(), access.decorators(), access.resolved_addr(),
+                  LIR_OprFact::illegalOpr /* pre_val */);
+    }
     if (ShenandoahCASBarrier) {
       cmp_value.load_item();
       new_value.load_item();
@@ -87,12 +91,20 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRIt
   LIR_Opr value_opr = value.result();
 
   if (access.is_oop()) {
-    value_opr = storeval_barrier(access, value_opr, access.access_emit_info(), true);
+    value_opr = storeval_barrier(access.gen(), value_opr, access.access_emit_info(), access.decorators());
   }
 
   assert(type == T_INT || type == T_OBJECT || type == T_ARRAY LP64_ONLY( || type == T_LONG ), "unexpected type");
   LIR_Opr tmp = gen->new_register(T_INT);
   __ xchg(access.resolved_addr(), value_opr, result, tmp);
+
+  if (access.is_oop()) {
+    result = load_reference_barrier(access.gen(), result, access.access_emit_info(), true);
+    if (ShenandoahSATBBarrier) {
+      pre_barrier(access.gen(), access.access_emit_info(), access.decorators(), LIR_OprFact::illegalOpr,
+                  result /* pre_val */);
+    }
+  }
 
   return result;
 }

@@ -1001,7 +1001,6 @@ source_hpp %{
 #include "gc/shared/collectedHeap.hpp"
 #include "opto/addnode.hpp"
 #if INCLUDE_SHENANDOAHGC
-#include "gc/shenandoah/shenandoahBrooksPointer.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #endif
@@ -9347,21 +9346,6 @@ instruct convN2I(iRegINoSp dst, iRegN src)
   %}
 
   ins_pipe(ialu_reg);
-%}
-
-instruct shenandoahRB(iRegPNoSp dst, iRegP src, rFlagsReg cr) %{
-  match(Set dst (ShenandoahReadBarrier src));
-  format %{ "shenandoah_rb $dst,$src" %}
-  ins_encode %{
-#if INCLUDE_SHENANDOAHGC
-    Register s = $src$$Register;
-    Register d = $dst$$Register;
-    __ ldr(d, Address(s, ShenandoahBrooksPointer::byte_offset()));
-#else
-    ShouldNotReachHere();
-#endif
-  %}
-  ins_pipe(pipe_class_memory);
 %}
 
 

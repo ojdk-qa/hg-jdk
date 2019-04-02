@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP
-#define SHARE_VM_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP
+#ifndef SHARE_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP
+#define SHARE_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP
 
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "gc/shenandoah/c2/shenandoahSupport.hpp"
@@ -30,14 +30,21 @@
 
 class ShenandoahBarrierSetC2State : public ResourceObj {
 private:
-  GrowableArray<ShenandoahWriteBarrierNode*>* _shenandoah_barriers;
+  GrowableArray<ShenandoahEnqueueBarrierNode*>* _enqueue_barriers;
+  GrowableArray<ShenandoahLoadReferenceBarrierNode*>* _load_reference_barriers;
 
 public:
   ShenandoahBarrierSetC2State(Arena* comp_arena);
-  int shenandoah_barriers_count() const;
-  ShenandoahWriteBarrierNode* shenandoah_barrier(int idx) const;
-  void add_shenandoah_barrier(ShenandoahWriteBarrierNode * n);
-  void remove_shenandoah_barrier(ShenandoahWriteBarrierNode * n);
+
+  int enqueue_barriers_count() const;
+  ShenandoahEnqueueBarrierNode* enqueue_barrier(int idx) const;
+  void add_enqueue_barrier(ShenandoahEnqueueBarrierNode* n);
+  void remove_enqueue_barrier(ShenandoahEnqueueBarrierNode * n);
+
+  int load_reference_barriers_count() const;
+  ShenandoahLoadReferenceBarrierNode* load_reference_barrier(int idx) const;
+  void add_load_reference_barrier(ShenandoahLoadReferenceBarrierNode* n);
+  void remove_load_reference_barrier(ShenandoahLoadReferenceBarrierNode * n);
 };
 
 class ShenandoahBarrierSetC2 : public BarrierSetC2 {
@@ -66,15 +73,12 @@ private:
                                     BasicType bt) const;
 
   Node* shenandoah_enqueue_barrier(GraphKit* kit, Node* val) const;
-  Node* shenandoah_read_barrier(GraphKit* kit, Node* obj) const;
   Node* shenandoah_storeval_barrier(GraphKit* kit, Node* obj) const;
-  Node* shenandoah_write_barrier(GraphKit* kit, Node* obj) const;
-  Node* shenandoah_read_barrier_impl(GraphKit* kit, Node* obj, bool use_ctrl, bool use_mem, bool allow_fromspace) const;
-  Node* shenandoah_write_barrier_impl(GraphKit* kit, Node* obj) const;
-  Node* shenandoah_write_barrier_helper(GraphKit* kit, Node* obj, const TypePtr* adr_type) const;
 
   void insert_pre_barrier(GraphKit* kit, Node* base_oop, Node* offset,
                           Node* pre_val, bool need_mem_bar) const;
+
+  static bool clone_needs_postbarrier(ArrayCopyNode *ac, PhaseIterGVN& igvn);
 
 protected:
   virtual Node* load_at_resolved(C2Access& access, const Type* val_type) const;
@@ -99,17 +103,10 @@ public:
   static const TypeFunc* write_ref_field_pre_entry_Type();
   static const TypeFunc* shenandoah_clone_barrier_Type();
   static const TypeFunc* shenandoah_write_barrier_Type();
+  virtual bool has_load_barriers() const { return true; }
 
   // This is the entry-point for the backend to perform accesses through the Access API.
-  virtual Node* store_at(C2Access& access, C2AccessValue& val) const;
-  virtual Node* load_at(C2Access& access, const Type* val_type) const;
-
-  virtual Node* atomic_add_at(C2AtomicAccess& access, Node* new_val, const Type* value_type) const;
-
   virtual void clone(GraphKit* kit, Node* src, Node* dst, Node* size, bool is_array) const;
-
-  virtual Node* resolve_for_read(GraphKit* kit, Node* n) const;
-  virtual Node* resolve_for_write(GraphKit* kit, Node* n) const;
 
   // These are general helper methods used by C2
   virtual bool array_copy_requires_gc_barriers(BasicType type) const;
@@ -117,6 +114,10 @@ public:
   // Support for GC barriers emitted during parsing
   virtual bool is_gc_barrier_node(Node* node) const;
   virtual Node* step_over_gc_barrier(Node* c) const;
+  virtual bool expand_barriers(Compile* C, PhaseIterGVN& igvn) const;
+  virtual bool optimize_loops(PhaseIdealLoop* phase, LoopOptsMode mode, VectorSet& visited, Node_Stack& nstack, Node_List& worklist) const;
+  virtual bool strip_mined_loops_expanded(LoopOptsMode mode) const { return mode == LoopOptsShenandoahExpand || mode == LoopOptsShenandoahPostExpand; }
+  virtual bool is_gc_specific_loop_opts_pass(LoopOptsMode mode) const { return mode == LoopOptsShenandoahExpand || mode == LoopOptsShenandoahPostExpand; }
 
   // Support for macro expanded GC barriers
   virtual void register_potential_barrier_node(Node* node) const;
@@ -132,9 +133,12 @@ public:
   // If the BarrierSetC2 state has kept macro nodes in its compilation unit state to be
   // expanded later, then now is the time to do so.
   virtual bool expand_macro_nodes(PhaseMacroExpand* macro) const;
+
+#ifdef ASSERT
   virtual void verify_gc_barriers(bool post_parse) const;
+#endif
 
   virtual Node* ideal_node(PhaseGVN* phase, Node* n, bool can_reshape) const;
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP
+#endif // SHARE_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP

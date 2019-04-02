@@ -543,7 +543,6 @@ source_hpp %{
 #include "gc/z/zBarrierSetAssembler.hpp"
 #endif
 #if INCLUDE_SHENANDOAHGC
-#include "gc/shenandoah/shenandoahBrooksPointer.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #else
 // This is normally available through shenandoah_globals.hpp, but if Shenandoah
@@ -6719,59 +6718,6 @@ instruct convN2I(rRegI dst, rRegN src)
     __ movl($dst$$Register, $src$$Register);
   %}
   ins_pipe(ialu_reg_reg); // XXX
-%}
-
-instruct shenandoahRB(rRegP dst, rRegP src, rFlagsReg cr) %{
-  match(Set dst (ShenandoahReadBarrier src));
-  effect(DEF dst, USE src);
-  ins_cost(125); // XXX
-  format %{ "shenandoah_rb $dst, $src" %}
-  ins_encode %{
-#if INCLUDE_SHENANDOAHGC
-    Register d = $dst$$Register;
-    Register s = $src$$Register;
-    __ movptr(d, Address(s, ShenandoahBrooksPointer::byte_offset()));
-#else
-    ShouldNotReachHere();
-#endif
-  %}
-  ins_pipe(ialu_reg_mem);
-%}
-
-instruct shenandoahRBNarrow(rRegP dst, rRegN src) %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_shift() == 0));
-  match(Set dst (ShenandoahReadBarrier (DecodeN src)));
-  effect(DEF dst, USE src);
-  ins_cost(125); // XXX
-  format %{ "shenandoah_rb $dst, $src" %}
-  ins_encode %{
-#if INCLUDE_SHENANDOAHGC
-    Register d = $dst$$Register;
-    Register s = $src$$Register;
-    __ movptr(d, Address(r12, s, Address::times_1, ShenandoahBrooksPointer::byte_offset()));
-#else
-    ShouldNotReachHere();
-#endif
-  %}
-  ins_pipe(ialu_reg_mem);
-%}
-
-instruct shenandoahRBNarrowShift(rRegP dst, rRegN src) %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_shift() == Address::times_8));
-  match(Set dst (ShenandoahReadBarrier (DecodeN src)));
-  effect(DEF dst, USE src);
-  ins_cost(125); // XXX
-  format %{ "shenandoah_rb $dst, $src" %}
-  ins_encode %{
-#if INCLUDE_SHENANDOAHGC
-    Register d = $dst$$Register;
-    Register s = $src$$Register;
-    __ movptr(d, Address(r12, s, Address::times_8, ShenandoahBrooksPointer::byte_offset()));
-#else
-    ShouldNotReachHere();
-#endif
-  %}
-  ins_pipe(ialu_reg_mem);
 %}
 
 // Convert oop pointer into compressed form

@@ -37,7 +37,6 @@ ShenandoahTraversalHeuristics::ShenandoahTraversalHeuristics() : ShenandoahHeuri
   _last_cset_select(0)
  {
   FLAG_SET_DEFAULT(ShenandoahSATBBarrier,            false);
-  FLAG_SET_DEFAULT(ShenandoahStoreValReadBarrier,    false);
   FLAG_SET_DEFAULT(ShenandoahStoreValEnqueueBarrier, true);
   FLAG_SET_DEFAULT(ShenandoahKeepAliveBarrier,       false);
   FLAG_SET_DEFAULT(ShenandoahAllowMixedAllocs,       false);
@@ -46,11 +45,9 @@ ShenandoahTraversalHeuristics::ShenandoahTraversalHeuristics() : ShenandoahHeuri
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
 
   // Final configuration checks
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahReadBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahWriteBarrier);
+  SHENANDOAH_CHECK_FLAG_SET(ShenandoahLoadRefBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahStoreValEnqueueBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCASBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahAcmpBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCloneBarrier);
 }
 

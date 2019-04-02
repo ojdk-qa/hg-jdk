@@ -58,7 +58,7 @@ inline oop ShenandoahBrooksPointer::forwardee(oop obj) {
 
 inline oop ShenandoahBrooksPointer::try_update_forwardee(oop obj, oop update) {
   oop result = (oop) Atomic::cmpxchg(update, (oop*)brooks_ptr_addr(obj), obj);
-  shenandoah_assert_correct_except(NULL, obj, !oopDesc::unsafe_equals(result, obj));
+  shenandoah_assert_correct_except(NULL, obj, result != obj);
   return result;
 }
 

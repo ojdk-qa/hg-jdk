@@ -942,10 +942,6 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
         index = tmp;
       }
 
-      if (is_updateBytes) {
-        base_op = access_resolve_for_read(IN_HEAP, base_op, NULL);
-      }
-
       if (offset) {
         LIR_Opr tmp = new_pointer_register();
         __ add(base_op, LIR_OprFact::intConst(offset), tmp);

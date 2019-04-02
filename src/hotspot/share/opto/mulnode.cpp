@@ -479,7 +479,7 @@ Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   uint lop = load->Opcode();
 
 #if INCLUDE_SHENANDOAHGC
-  if (UseShenandoahGC && ShenandoahWriteBarrierNode::is_gc_state_load(load)) {
+  if (UseShenandoahGC && ShenandoahBarrierC2Support::is_gc_state_load(load)) {
     // Do not touch the load+mask, we would match the whole sequence exactly.
     // Converting the load to LoadUB/LoadUS would mismatch and waste a register
     // on the barrier fastpath.

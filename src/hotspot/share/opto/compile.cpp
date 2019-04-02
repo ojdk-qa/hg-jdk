@@ -2410,7 +2410,7 @@ void Compile::Optimize() {
   print_method(PHASE_BEFORE_BARRIER_EXPAND, 2);
 
 #if INCLUDE_SHENANDOAHGC
-  if (UseShenandoahGC && !ShenandoahWriteBarrierNode::expand(this, igvn, loop_opts_cnt)) {
+  if (UseShenandoahGC && ((ShenandoahBarrierSetC2*)BarrierSet::barrier_set()->barrier_set_c2())->expand_barriers(this, igvn)) {
     assert(failing(), "must bail out w/ explicit message");
     return;
   }
@@ -3058,7 +3058,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
         Node *m = wq.at(next);
         for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
           Node* use = m->fast_out(i);
-          if (use->is_Mem() || use->is_EncodeNarrowPtr() || use->is_ShenandoahBarrier()) {
+          if (use->is_Mem() || use->is_EncodeNarrowPtr()) {
             use->ensure_control_or_add_prec(n->in(0));
           } else {
             switch(use->Opcode()) {
@@ -3412,9 +3412,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
     }
 #endif
      break;
-  case Op_ShenandoahReadBarrier:
-    break;
-  case Op_ShenandoahWriteBarrier:
+  case Op_ShenandoahLoadReferenceBarrier:
     assert(false, "should have been expanded already");
     break;
 #endif

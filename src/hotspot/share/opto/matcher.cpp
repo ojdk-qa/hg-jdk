@@ -2157,15 +2157,6 @@ void Matcher::find_shared( Node *n ) {
       case Op_SafePoint:
         mem_op = true;
         break;
-#if INCLUDE_SHENANDOAHGC
-      case Op_ShenandoahReadBarrier:
-        if (n->in(ShenandoahBarrierNode::ValueIn)->is_DecodeNarrowPtr()) {
-          set_shared(n->in(ShenandoahBarrierNode::ValueIn)->in(1));
-        }
-        mem_op = true;
-        set_shared(n);
-        break;
-#endif
 #if INCLUDE_ZGC
       case Op_CallLeaf:
         if (UseZGC) {

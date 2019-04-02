@@ -78,9 +78,6 @@ public:
                              Register t1,
                              Label& slow_case);
 
-  virtual void resolve_for_read(MacroAssembler* masm, DecoratorSet decorators, Register obj);
-  virtual void resolve_for_write(MacroAssembler* masm, DecoratorSet decorators, Register obj);
-
   virtual void barrier_stubs_init() {}
 };
 

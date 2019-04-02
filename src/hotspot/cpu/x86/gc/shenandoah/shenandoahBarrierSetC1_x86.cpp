@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -57,6 +57,7 @@ void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler* masm) {
 }
 
 #undef __
+
 #ifdef ASSERT
 #define __ gen->lir(__FILE__, __LINE__)->
 #else
@@ -67,6 +68,10 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess& access, LI
 
   if (access.is_oop()) {
     LIRGenerator* gen = access.gen();
+    if (ShenandoahSATBBarrier) {
+      pre_barrier(gen, access.access_emit_info(), access.decorators(), access.resolved_addr(),
+                  LIR_OprFact::illegalOpr /* pre_val */);
+    }
     if (ShenandoahCASBarrier) {
       cmp_value.load_item_force(FrameMap::rax_oop_opr);
       new_value.load_item();
@@ -92,7 +97,7 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRIt
   LIR_Opr value_opr = value.result();
 
   if (access.is_oop()) {
-    value_opr = storeval_barrier(access, value_opr, access.access_emit_info(), true);
+    value_opr = storeval_barrier(access.gen(), value_opr, access.access_emit_info(), access.decorators());
   }
 
   // Because we want a 2-arg form of xchg and xadd
@@ -100,6 +105,14 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRIt
 
   assert(type == T_INT || type == T_OBJECT || type == T_ARRAY LP64_ONLY( || type == T_LONG ), "unexpected type");
   __ xchg(access.resolved_addr(), result, result, LIR_OprFact::illegalOpr);
+
+  if (access.is_oop()) {
+    result = load_reference_barrier(access.gen(), result, access.access_emit_info(), true);
+    if (ShenandoahSATBBarrier) {
+      pre_barrier(access.gen(), access.access_emit_info(), access.decorators(), LIR_OprFact::illegalOpr,
+                  result /* pre_val */);
+    }
+  }
 
   return result;
 }

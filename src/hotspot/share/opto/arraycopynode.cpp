@@ -154,45 +154,8 @@ int ArrayCopyNode::get_count(PhaseGVN *phase) const {
 
 #if INCLUDE_SHENANDOAHGC
 Node* ArrayCopyNode::shenandoah_add_storeval_barrier(PhaseGVN *phase, bool can_reshape, Node* v, MergeMemNode* mem, Node*& ctl) {
-  if (ShenandoahStoreValReadBarrier) {
-    RegionNode* region = new RegionNode(3);
-    const Type* v_t = phase->type(v);
-    Node* phi = new PhiNode(region, v_t->isa_oopptr() ? v_t->is_oopptr()->cast_to_nonconst() : v_t);
-    Node* cmp = phase->transform(new CmpPNode(v, phase->zerocon(T_OBJECT)));
-    Node* bol = phase->transform(new BoolNode(cmp, BoolTest::ne));
-    IfNode* iff = new IfNode(ctl, bol, PROB_LIKELY_MAG(3), COUNT_UNKNOWN);
-
-    phase->transform(iff);
-    if (can_reshape) {
-      phase->is_IterGVN()->_worklist.push(iff);
-    } else {
-      phase->record_for_igvn(iff);
-    }
-
-    Node* null_true = phase->transform(new IfFalseNode(iff));
-    Node* null_false = phase->transform(new IfTrueNode(iff));
-    region->init_req(1, null_true);
-    region->init_req(2, null_false);
-    phi->init_req(1, phase->zerocon(T_OBJECT));
-    Node* cast = new CastPPNode(v, phase->type(v)->join_speculative(TypePtr::NOTNULL));
-    cast->set_req(0, null_false);
-    cast = phase->transform(cast);
-    Node* rb = phase->transform(new ShenandoahReadBarrierNode(null_false, phase->C->immutable_memory(), cast, false));
-    phi->init_req(2, rb);
-    ctl = phase->transform(region);
-    return phase->transform(phi);
-  }
   if (ShenandoahStoreValEnqueueBarrier) {
-    const TypePtr* adr_type = ShenandoahBarrierNode::brooks_pointer_type(phase->type(v));
-    int alias = phase->C->get_alias_index(adr_type);
-    Node* wb = new ShenandoahWriteBarrierNode(phase->C, ctl, mem->memory_at(alias), v);
-    Node* wb_transformed = phase->transform(wb);
-    Node* enqueue = phase->transform(new ShenandoahEnqueueBarrierNode(wb_transformed));
-    if (wb_transformed == wb) {
-      Node* proj = phase->transform(new ShenandoahWBMemProjNode(wb));
-      mem->set_memory_at(alias, proj);
-    }
-    return enqueue;
+    return phase->transform(new ShenandoahEnqueueBarrierNode(v));
   }
   return v;
 }

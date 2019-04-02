@@ -794,9 +794,6 @@ public:
   void resolve_oop_handle(Register result, Register tmp = r5);
   void load_mirror(Register dst, Register method, Register tmp = r5);
 
-  void resolve_for_read(DecoratorSet decorators, Register obj);
-  void resolve_for_write(DecoratorSet decorators, Register obj);
-
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
                       Register tmp1, Register tmp_thread);
 
@@ -1020,7 +1017,6 @@ public:
                enum operand_size size,
                bool acquire, bool release, bool weak,
                Register result);
-
 private:
   void compare_eq(Register rn, Register rm, enum operand_size size);
 

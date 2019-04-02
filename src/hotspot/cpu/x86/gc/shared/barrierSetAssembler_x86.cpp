@@ -322,11 +322,3 @@ void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm, Register th
   __ adcl(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())+4), 0);
 #endif
 }
-
-void BarrierSetAssembler::resolve_for_read(MacroAssembler* masm, DecoratorSet decorators, Register obj) {
-  // Default to no-op
-}
-
-void BarrierSetAssembler::resolve_for_write(MacroAssembler* masm, DecoratorSet decorators, Register obj) {
-  // Default to no-op
-}
