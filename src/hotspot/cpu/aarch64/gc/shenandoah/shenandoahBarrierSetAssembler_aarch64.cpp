@@ -88,6 +88,16 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
 void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
                                                        Register start, Register end, Register scratch, RegSet saved_regs) {
   if (is_oop) {
+      Label done;
+
+      // Avoid calling runtime if count == 0
+      __ cbz(count, done);
+
+      // Is updating references?
+      Address gc_state(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
+      __ ldrb(rscratch1, gc_state);
+      __ tbz(rscratch1, ShenandoahHeap::UPDATEREFS_BITPOS, done);
+
     __ push(saved_regs, sp);
     // must compute element count unless barrier set interface is changed (other platforms supply count)
     assert_different_registers(start, end, scratch);
@@ -98,6 +108,8 @@ void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Dec
     __ mov(c_rarg1, scratch);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_array_post_entry), 2);
     __ pop(saved_regs, sp);
+
+    __ bind(done);
   }
 }
 
