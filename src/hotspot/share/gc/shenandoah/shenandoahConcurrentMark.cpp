@@ -670,15 +670,13 @@ void ShenandoahConcurrentMark::weak_refs_work(bool full_gc) {
 // Weak processor API requires us to visit the oops, even if we are not doing
 // anything to them.
 void ShenandoahConcurrentMark::weak_roots_work() {
-  ShenandoahIsAliveSelector is_alive;
-
-  if (_heap->has_forwarded_objects()) {
-    ShenandoahWeakUpdateClosure cl;
-    WeakProcessor::weak_oops_do(is_alive.is_alive_closure(), &cl);
-  } else {
-    ShenandoahWeakAssertNotForwardedClosure cl;
-    WeakProcessor::weak_oops_do(is_alive.is_alive_closure(), &cl);
-  }
+  OopClosure* keep_alive = &do_nothing_cl;
+#ifdef ASSERT
+  ShenandoahWeakAssertNotForwardedClosure verify_cl;
+  keep_alive = &verify_cl;
+#endif
+  ShenandoahIsAliveClosure is_alive;
+  WeakProcessor::weak_oops_do(&is_alive, keep_alive);
 }
 
 void ShenandoahConcurrentMark::weak_refs_work_doit(bool full_gc) {

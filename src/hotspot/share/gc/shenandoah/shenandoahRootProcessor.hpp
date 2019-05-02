@@ -111,17 +111,18 @@ class ShenandoahRootEvacuator : public StackObj {
   SubTasksDone* _evacuation_tasks;
   StrongRootsScope _srs;
   ShenandoahPhaseTimings::Phase _phase;
-  ParallelCLDRootIterator _cld_iterator;
   ShenandoahCsetCodeRootsIterator _coderoots_cset_iterator;
+  ParallelCLDRootIterator _cld_iterator;
   OopStorage::ParState<false, false> _par_state_string;
 
   enum Shenandoah_evacuate_roots_tasks {
     SHENANDOAH_EVAC_Universe_oops_do,
-    SHENANDOAH_EVAC_JNIHandles_oops_do,
     SHENANDOAH_EVAC_ObjectSynchronizer_oops_do,
     SHENANDOAH_EVAC_Management_oops_do,
     SHENANDOAH_EVAC_SystemDictionary_oops_do,
     SHENANDOAH_EVAC_jvmti_oops_do,
+    SHENANDOAH_EVAC_JNIHandles_oops_do,
+    SHENANDOAH_EVAC_WeakProcessor_oops_do,
     // Leave this one last.
     SHENANDOAH_EVAC_NumElements
   };
