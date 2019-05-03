@@ -710,8 +710,7 @@ bool ShenandoahBarrierSetC2::is_gc_barrier_node(Node* node) const {
 }
 
 Node* ShenandoahBarrierSetC2::step_over_gc_barrier(Node* c) const {
-  // Currently not needed.
-  return c;
+  return ShenandoahBarrierNode::skip_through_barrier(c);
 }
 
 bool ShenandoahBarrierSetC2::array_copy_requires_gc_barriers(BasicType type) const {
