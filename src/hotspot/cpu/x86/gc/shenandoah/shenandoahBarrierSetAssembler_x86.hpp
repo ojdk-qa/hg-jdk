@@ -27,8 +27,11 @@
 #include "asm/macroAssembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #ifdef COMPILER1
-#include "c1/c1_LIRAssembler.hpp"
-#include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
+class LIR_Assembler;
+class ShenandoahPreBarrierStub;
+class ShenandoahWriteBarrierStub;
+class StubAssembler;
+class StubCodeGenerator;
 #endif
 
 class ShenandoahBarrierSetAssembler: public BarrierSetAssembler {
@@ -62,7 +65,6 @@ private:
   void write_barrier(MacroAssembler* masm, Register dst);
   void write_barrier_impl(MacroAssembler* masm, Register dst);
 
-  void storeval_barrier(MacroAssembler* masm, Register dst, Register tmp);
   void storeval_barrier_impl(MacroAssembler* masm, Register dst, Register tmp);
 
   address generate_shenandoah_wb(StubCodeGenerator* cgen, bool c_abi, bool do_cset_test);
@@ -76,18 +78,16 @@ public:
 
   static bool is_shenandoah_wb_C_call(address call);
 
+  void storeval_barrier(MacroAssembler* masm, Register dst, Register tmp);
 #ifdef COMPILER1
   void gen_pre_barrier_stub(LIR_Assembler* ce, ShenandoahPreBarrierStub* stub);
   void gen_write_barrier_stub(LIR_Assembler* ce, ShenandoahWriteBarrierStub* stub);
   void generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm);
 #endif
 
-  virtual void cmpxchg_oop(MacroAssembler* masm, DecoratorSet decorators,
+  virtual void cmpxchg_oop(MacroAssembler* masm,
                            Register res, Address addr, Register oldval, Register newval,
-                           bool exchange, bool encode, Register tmp1, Register tmp2);
-  virtual void xchg_oop(MacroAssembler* masm, DecoratorSet decorators,
-                        Register obj, Address addr, Register tmp);
-
+                           bool exchange, Register tmp1, Register tmp2);
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                   Register src, Register dst, Register count);
   virtual void arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,

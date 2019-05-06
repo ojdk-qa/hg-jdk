@@ -1925,10 +1925,21 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     assert(newval != addr, "new value and addr must be in different registers");
 
     if ( op->code() == lir_cas_obj) {
-      Register tmp1 = op->tmp1()->as_register();
-      Register tmp2 = op->tmp2()->as_register();
-      __ cmpxchg_oop(NULL, Address(addr, 0), cmpval, newval, true, true, tmp1, tmp2);
-    } else {
+#ifdef _LP64
+      if (UseCompressedOops) {
+        __ encode_heap_oop(cmpval);
+        __ mov(rscratch1, newval);
+        __ encode_heap_oop(rscratch1);
+        __ lock();
+        // cmpval (rax) is implicitly used by this instruction
+        __ cmpxchgl(rscratch1, Address(addr, 0));
+      } else
+#endif
+      {
+        __ lock();
+        __ cmpxchgptr(newval, Address(addr, 0));
+      }
+   } else {
       assert(op->code() == lir_cas_int, "lir_cas_int expected");
       if (os::is_MP()) {
         __ lock();
@@ -3990,8 +4001,17 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
   } else if (data->is_oop()) {
     assert (code == lir_xchg, "xadd for oops");
     Register obj = data->as_register();
-    assert (tmp->is_register(), "should be register");
-    __ xchg_oop(obj, as_Address(src->as_address_ptr()), tmp->as_register());
+#ifdef _LP64
+    if (UseCompressedOops) {
+      __ encode_heap_oop(obj);
+      __ xchgl(obj, as_Address(src->as_address_ptr()));
+      __ decode_heap_oop(obj);
+    } else {
+      __ xchgptr(obj, as_Address(src->as_address_ptr()));
+    }
+#else
+    __ xchgl(obj, as_Address(src->as_address_ptr()));
+#endif
   } else if (data->type() == T_LONG) {
 #ifdef _LP64
     assert(data->as_register_lo() == data->as_register_hi(), "should be a single register");

@@ -1021,11 +1021,6 @@ public:
                bool acquire, bool release, bool weak,
                Register result);
 
-  void cmpxchg_oop(Register addr, Register expected, Register new_val,
-                   bool acquire, bool release, bool weak, bool encode,
-                   Register tmp1, Register tmp2, Register tmp3 = rscratch2,
-                   Register result = noreg);
-
 private:
   void compare_eq(Register rn, Register rm, enum operand_size size);
 

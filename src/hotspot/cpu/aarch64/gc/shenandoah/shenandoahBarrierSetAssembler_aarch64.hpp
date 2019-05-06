@@ -27,8 +27,11 @@
 #include "asm/macroAssembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #ifdef COMPILER1
-#include "c1/c1_LIRAssembler.hpp"
-#include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
+class LIR_Assembler;
+class ShenandoahPreBarrierStub;
+class ShenandoahWriteBarrierStub;
+class StubAssembler;
+class StubCodeGenerator;
 #endif
 
 class ShenandoahBarrierSetAssembler: public BarrierSetAssembler {
@@ -58,7 +61,6 @@ private:
   void read_barrier_not_null_impl(MacroAssembler* masm, Register dst);
   void write_barrier(MacroAssembler* masm, Register dst);
   void write_barrier_impl(MacroAssembler* masm, Register dst);
-  void storeval_barrier(MacroAssembler* masm, Register dst, Register tmp);
   void asm_acmp_barrier(MacroAssembler* masm, Register op1, Register op2);
 
   address generate_shenandoah_wb(StubCodeGenerator* cgen, bool c_abi, bool do_cset_test);
@@ -68,6 +70,8 @@ public:
   static address shenandoah_wb_C();
 
   static bool is_shenandoah_wb_C_call(address call);
+
+  void storeval_barrier(MacroAssembler* masm, Register dst, Register tmp);
 
 #ifdef COMPILER1
   void gen_pre_barrier_stub(LIR_Assembler* ce, ShenandoahPreBarrierStub* stub);
@@ -95,9 +99,7 @@ public:
   virtual void resolve_for_write(MacroAssembler* masm, DecoratorSet decorators, Register obj);
 
   virtual void cmpxchg_oop(MacroAssembler* masm, Register addr, Register expected, Register new_val,
-                           bool acquire, bool release, bool weak, bool encode,
-                           Register tmp1, Register tmp2, Register tmp3,
-                           Register result);
+                           bool acquire, bool release, bool weak, bool is_cae, Register result);
 
   virtual void barrier_stubs_init();
 };

@@ -29,6 +29,8 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 
+class ShenandoahBarrierSetAssembler;
+
 class ShenandoahBarrierSet: public BarrierSet {
 private:
   enum ArrayCopyStoreValMode {
@@ -43,6 +45,8 @@ private:
 
 public:
   ShenandoahBarrierSet(ShenandoahHeap* heap);
+
+  static ShenandoahBarrierSetAssembler* assembler();
 
   inline static ShenandoahBarrierSet* barrier_set() {
     return barrier_set_cast<ShenandoahBarrierSet>(BarrierSet::barrier_set());

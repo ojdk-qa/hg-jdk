@@ -591,40 +591,20 @@ void ShenandoahBarrierSetAssembler::resolve_for_write(MacroAssembler* masm, Deco
 // Special Shenandoah CAS implementation that handles false negatives
 // due to concurrent evacuation.
 #ifndef _LP64
-void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm, DecoratorSet decorators,
+void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
                                                 Register res, Address addr, Register oldval, Register newval,
-                                                bool exchange, bool encode, Register tmp1, Register tmp2) {
+                                                bool exchange, Register tmp1, Register tmp2) {
   // Shenandoah has no 32-bit version for this.
   Unimplemented();
 }
 #else
-void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm, DecoratorSet decorators,
+void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
                                                 Register res, Address addr, Register oldval, Register newval,
-                                                bool exchange, bool encode, Register tmp1, Register tmp2) {
-
-  if (!ShenandoahCASBarrier) {
-    BarrierSetAssembler::cmpxchg_oop(masm, decorators, res, addr, oldval, newval, exchange, encode, tmp1, tmp2);
-    return;
-  }
-
+                                                bool exchange, Register tmp1, Register tmp2) {
   assert(ShenandoahCASBarrier, "Should only be used when CAS barrier is enabled");
   assert(oldval == rax, "must be in rax for implicit use in cmpxchg");
 
   Label retry, done;
-
-  // Apply storeval barrier to newval.
-  if (encode) {
-    storeval_barrier(masm, newval, tmp1);
-  }
-
-  if (UseCompressedOops) {
-    if (encode) {
-      __ encode_heap_oop(oldval);
-      __ mov(rscratch1, newval);
-      __ encode_heap_oop(rscratch1);
-      newval = rscratch1;
-    }
-  }
 
   // Remember oldval for retry logic below
   if (UseCompressedOops) {
@@ -703,12 +683,6 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm, DecoratorS
   }
 }
 #endif // LP64
-
-void ShenandoahBarrierSetAssembler::xchg_oop(MacroAssembler* masm, DecoratorSet decorators,
-                                             Register obj, Address addr, Register tmp) {
-  storeval_barrier(masm, obj, tmp);
-  BarrierSetAssembler::xchg_oop(masm, decorators, obj, addr, tmp);
-}
 
 void ShenandoahBarrierSetAssembler::save_vector_registers(MacroAssembler* masm) {
   int num_xmm_regs = LP64_ONLY(16) NOT_LP64(8);
