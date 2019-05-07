@@ -1582,7 +1582,7 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
       casw(addr, newval, cmpval);
     } else {
       casl(addr, newval, cmpval);
-    }    assert(op->tmp1()->is_valid(), "must be");
+    }
   } else if (op->code() == lir_cas_int) {
     casw(addr, newval, cmpval);
   } else {
