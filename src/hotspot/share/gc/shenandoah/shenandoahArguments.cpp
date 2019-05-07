@@ -48,6 +48,8 @@ void ShenandoahArguments::initialize() {
   FLAG_SET_DEFAULT(ShenandoahStoreValEnqueueBarrier, false);
   FLAG_SET_DEFAULT(ShenandoahCASBarrier,             false);
   FLAG_SET_DEFAULT(ShenandoahCloneBarrier,           false);
+
+  FLAG_SET_DEFAULT(ShenandoahVerifyOptoBarriers,     false);
 #endif
 
   if (UseLargePages && (MaxHeapSize / os::large_page_size()) < ShenandoahHeapRegion::MIN_NUM_REGIONS) {
