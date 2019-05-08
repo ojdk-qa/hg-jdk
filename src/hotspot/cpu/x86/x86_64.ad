@@ -545,6 +545,12 @@ source_hpp %{
 #if INCLUDE_SHENANDOAHGC
 #include "gc/shenandoah/shenandoahBrooksPointer.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
+#else
+// This is normally available through shenandoah_globals.hpp, but if Shenandoah
+// compilation is disabled, there is no such header. Fake the constants for predicates
+// to work. This workaround would be removed as we backport more stuff, including
+// the split shenandoah_x86_64.ad.
+#define ShenandoahCASBarrier false
 #endif
 %}
 
@@ -7651,10 +7657,14 @@ instruct compareAndSwapP_shenandoah(rRegI res,
   format %{ "shenandoah_cas_oop $mem_ptr,$newval" %}
 
   ins_encode %{
+#if INCLUDE_SHENANDOAHGC
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $res$$Register, $mem_ptr$$Address, $oldval$$Register, $newval$$Register,
             false, // swap
             $tmp1$$Register, $tmp2$$Register
     );
+#else
+    ShouldNotReachHere();
+#endif
   %}
   ins_pipe( pipe_cmpxchg );
 %}
@@ -7794,10 +7804,14 @@ instruct compareAndSwapN_shenandoah(rRegI res,
   format %{ "shenandoah_cas_oop $mem_ptr,$newval" %}
 
   ins_encode %{
+#if INCLUDE_SHENANDOAHGC
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $res$$Register, $mem_ptr$$Address, $oldval$$Register, $newval$$Register,
             false, // swap
             $tmp1$$Register, $tmp2$$Register
     );
+#else
+    ShouldNotReachHere();
+#endif
   %}
   ins_pipe( pipe_cmpxchg );
 %}
@@ -7910,10 +7924,14 @@ instruct compareAndExchangeN_shenandoah(memory mem_ptr,
   format %{ "shenandoah_cas_oop $mem_ptr,$newval" %}
 
   ins_encode %{
+#if INCLUDE_SHENANDOAHGC
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, NULL, $mem_ptr$$Address, $oldval$$Register, $newval$$Register,
             true, // exchange
             $tmp1$$Register, $tmp2$$Register
     );
+#else
+    ShouldNotReachHere();
+#endif
   %}
   ins_pipe( pipe_cmpxchg );
 %}
@@ -7951,10 +7969,14 @@ instruct compareAndExchangeP_shenandoah(memory mem_ptr,
   format %{ "shenandoah_cas_oop $mem_ptr,$newval" %}
 
   ins_encode %{
+#if INCLUDE_SHENANDOAHGC
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, NULL, $mem_ptr$$Address, $oldval$$Register, $newval$$Register,
             true,  // exchange
             $tmp1$$Register, $tmp2$$Register
     );
+#else
+    ShouldNotReachHere();
+#endif
   %}
   ins_pipe( pipe_cmpxchg );
 %}
