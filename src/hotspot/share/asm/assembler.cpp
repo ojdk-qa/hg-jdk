@@ -32,7 +32,7 @@
 #include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_SHENANDOAHGC
-#include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
+#include "gc/shenandoah/shenandoahForwarding.hpp"
 #endif
 
 
@@ -322,7 +322,7 @@ bool MacroAssembler::needs_explicit_null_check(intptr_t offset) {
     int adj = 0;
 #if INCLUDE_SHENANDOAHGC
     if (UseShenandoahGC) {
-      adj = ShenandoahBrooksPointer::byte_offset();
+      adj = ShenandoahForwarding::byte_offset();
       assert(adj < 0, "no need for positive adjustments");
     }
 #endif
@@ -334,7 +334,7 @@ bool MacroAssembler::needs_explicit_null_check(intptr_t offset) {
 #endif
 
 #if INCLUDE_SHENANDOAHGC
-  if (UseShenandoahGC && ((offset & address_bits) == (ShenandoahBrooksPointer::byte_offset() & address_bits))) {
+  if (UseShenandoahGC && ((offset & address_bits) == (ShenandoahForwarding::byte_offset() & address_bits))) {
     return false;
   }
 #endif
