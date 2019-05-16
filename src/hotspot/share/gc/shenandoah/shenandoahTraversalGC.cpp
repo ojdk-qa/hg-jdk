@@ -564,8 +564,6 @@ bool ShenandoahTraversalGC::check_and_handle_cancelled_gc(ShenandoahTaskTerminat
 }
 
 void ShenandoahTraversalGC::concurrent_traversal_collection() {
-  ClassLoaderDataGraph::clear_claimed_marks();
-
   ShenandoahGCPhase phase_work(ShenandoahPhaseTimings::conc_traversal);
   if (!_heap->cancelled_gc()) {
     uint nworkers = _heap->workers()->active_workers();
