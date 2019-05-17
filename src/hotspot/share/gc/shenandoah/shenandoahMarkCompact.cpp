@@ -562,22 +562,16 @@ public:
 
 class ShenandoahAdjustRootPointersTask : public AbstractGangTask {
 private:
-  ShenandoahRootProcessor* _rp;
+  ShenandoahRootAdjuster* _rp;
 
 public:
-  ShenandoahAdjustRootPointersTask(ShenandoahRootProcessor* rp) :
+  ShenandoahAdjustRootPointersTask(ShenandoahRootAdjuster* rp) :
     AbstractGangTask("Shenandoah Adjust Root Pointers Task"),
     _rp(rp) {}
 
   void work(uint worker_id) {
     ShenandoahAdjustPointersClosure cl;
-    CLDToOopClosure adjust_cld_closure(&cl, true);
-    MarkingCodeBlobClosure adjust_code_closure(&cl,
-                                             CodeBlobToOopClosure::FixRelocations);
-
-    _rp->update_all_roots<AlwaysTrueClosure>(&cl,
-                                             &adjust_cld_closure,
-                                             &adjust_code_closure, NULL, worker_id);
+    _rp->roots_do(worker_id, &cl);
   }
 };
 
@@ -593,7 +587,7 @@ void ShenandoahMarkCompact::phase3_update_references() {
 #if COMPILER2_OR_JVMCI
     DerivedPointerTable::clear();
 #endif
-    ShenandoahRootProcessor rp(heap, nworkers, ShenandoahPhaseTimings::full_gc_roots);
+    ShenandoahRootAdjuster rp(nworkers, ShenandoahPhaseTimings::full_gc_roots);
     ShenandoahAdjustRootPointersTask task(&rp);
     workers->run_task(&task);
 #if COMPILER2_OR_JVMCI

@@ -50,7 +50,7 @@
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahPacer.inline.hpp"
-#include "gc/shenandoah/shenandoahRootProcessor.hpp"
+#include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -1105,7 +1105,7 @@ public:
     ShenandoahEvacOOMScope oom_evac_scope;
     ShenandoahEvacuateUpdateRootsClosure cl;
     MarkingCodeBlobClosure blobsCl(&cl, CodeBlobToOopClosure::FixRelocations);
-    _rp->process_evacuate_roots(&cl, &blobsCl, worker_id);
+    _rp->roots_do(worker_id, &cl);
   }
 };
 
@@ -1116,7 +1116,7 @@ void ShenandoahHeap::evacuate_and_update_roots() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Only iterate roots while world is stopped");
 
   {
-    ShenandoahRootEvacuator rp(this, workers()->active_workers(), ShenandoahPhaseTimings::init_evac);
+    ShenandoahRootEvacuator rp(workers()->active_workers(), ShenandoahPhaseTimings::init_evac);
     ShenandoahEvacuateUpdateRootsTask roots_task(&rp);
     workers()->run_task(&roots_task);
   }
@@ -1330,11 +1330,9 @@ void ShenandoahHeap::object_iterate(ObjectClosure* cl) {
   Stack<oop,mtGC> oop_stack;
 
   // First, we process all GC roots. This populates the work stack with initial objects.
-  ShenandoahRootProcessor rp(this, 1, ShenandoahPhaseTimings::_num_phases);
+  ShenandoahRootScanner rp(1, ShenandoahPhaseTimings::_num_phases);
   ObjectIterateScanRootClosure oops(&_aux_bit_map, &oop_stack);
-  CLDToOopClosure clds(&oops, false);
-  CodeBlobToOopClosure blobs(&oops, false);
-  rp.process_all_roots(&oops, &clds, &blobs, NULL, 0);
+  rp.roots_do(0, &oops);
 
   // Work through the oop stack to traverse heap.
   while (! oop_stack.is_empty()) {
