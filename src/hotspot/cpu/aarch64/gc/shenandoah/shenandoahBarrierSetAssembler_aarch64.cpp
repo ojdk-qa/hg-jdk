@@ -90,9 +90,6 @@ void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Dec
   if (is_oop) {
       Label done;
 
-      // Avoid calling runtime if count == 0
-      __ cbz(count, done);
-
       // Is updating references?
       Address gc_state(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
       __ ldrb(rscratch1, gc_state);
@@ -104,6 +101,10 @@ void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Dec
     __ lea(scratch, Address(end, BytesPerHeapOop));
     __ sub(scratch, scratch, start);               // subtract start to get #bytes
     __ lsr(scratch, scratch, LogBytesPerHeapOop);  // convert to element count
+
+    // Avoid calling runtime if count == 0
+    __ cbz(scratch, done);
+
     __ mov(c_rarg0, start);
     __ mov(c_rarg1, scratch);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_array_post_entry), 2);
