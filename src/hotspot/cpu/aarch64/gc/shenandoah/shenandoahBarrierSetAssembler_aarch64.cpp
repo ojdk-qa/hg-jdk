@@ -95,7 +95,6 @@ void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Dec
       __ ldrb(rscratch1, gc_state);
       __ tbz(rscratch1, ShenandoahHeap::UPDATEREFS_BITPOS, done);
 
-    __ push(saved_regs, sp);
     // must compute element count unless barrier set interface is changed (other platforms supply count)
     assert_different_registers(start, end, scratch);
     __ lea(scratch, Address(end, BytesPerHeapOop));
@@ -105,6 +104,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Dec
     // Avoid calling runtime if count == 0
     __ cbz(scratch, done);
 
+    __ push(saved_regs, sp);
     __ mov(c_rarg0, start);
     __ mov(c_rarg1, scratch);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_array_post_entry), 2);
