@@ -65,6 +65,9 @@
 #include "gc/shenandoah/heuristics/shenandoahPassiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahTraversalHeuristics.hpp"
+#if INCLUDE_JFR
+#include "gc/shenandoah/shenandoahJfrSupport.hpp"
+#endif
 
 #include "memory/metaspace.hpp"
 #include "runtime/vmThread.hpp"
@@ -590,6 +593,8 @@ void ShenandoahHeap::post_initialize() {
   ref_processing_init();
 
   _heuristics->initialize();
+
+  JFR_ONLY(ShenandoahJFRSupport::register_jfr_type_serializers());
 }
 
 size_t ShenandoahHeap::used() const {
