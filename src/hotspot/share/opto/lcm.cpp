@@ -34,10 +34,6 @@
 #include "opto/runtime.hpp"
 #include "opto/chaitin.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "utilities/macros.hpp"
-#if INCLUDE_SHENANDOAHGC
-#include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
-#endif
 
 // Optimization - Graph Style
 
@@ -896,16 +892,8 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
       proj->_rout.OR(Matcher::method_handle_invoke_SP_save_mask());
   }
 
-#if INCLUDE_SHENANDOAHGC
-  if (UseShenandoahGC &&
-      ShenandoahBarrierSetAssembler::is_shenandoah_wb_C_call(mcall->entry_point())) {
-    assert(op == Op_CallLeafNoFP, "shenandoah_wb_C should be called with Op_CallLeafNoFP");
-    add_call_kills(proj, regs, save_policy, exclude_soe, true);
-  } else
-#endif
-  {
-    add_call_kills(proj, regs, save_policy, exclude_soe, false);
-  }
+  add_call_kills(proj, regs, save_policy, exclude_soe, false);
+
   return node_cnt;
 }
 

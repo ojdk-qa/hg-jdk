@@ -3144,8 +3144,7 @@ void ShenandoahBarrierNode::verify_raw_mem(RootNode* root) {
   nodes.push(root);
   for (uint next = 0; next < nodes.size(); next++) {
     Node *n  = nodes.at(next);
-    if (n->Opcode() == Op_CallLeafNoFP &&
-        ShenandoahBarrierSetAssembler::is_shenandoah_wb_C_call(n->as_Call()->entry_point())) {
+    if (ShenandoahBarrierSetC2::is_shenandoah_wb_call(n)) {
       controls.push(n);
       if (trace) { tty->print("XXXXXX verifying"); n->dump(); }
       for (uint next2 = 0; next2 < controls.size(); next2++) {
