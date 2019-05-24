@@ -50,6 +50,11 @@ class ShenandoahParallelCodeCacheIterator {
 private:
   ShenandoahParallelCodeHeapIterator* _iters;
   int                       _length;
+
+private:
+  // Noncopyable.
+  ShenandoahParallelCodeCacheIterator(const ShenandoahParallelCodeCacheIterator& o);
+  ShenandoahParallelCodeCacheIterator& operator=(const ShenandoahParallelCodeCacheIterator& o);
 public:
   ShenandoahParallelCodeCacheIterator(const GrowableArray<CodeHeap*>* heaps);
   ~ShenandoahParallelCodeCacheIterator();
@@ -124,18 +129,6 @@ public:
   static void initialize();
   static void add_nmethod(nmethod* nm);
   static void remove_nmethod(nmethod* nm);
-
-  /**
-   * Provides the iterator over all nmethods in the code cache that have oops.
-   * @return
-   */
-  static ShenandoahAllCodeRootsIterator iterator();
-
-  /**
-   * Provides the iterator over nmethods that have at least one oop in collection set.
-   * @return
-   */
-  static ShenandoahCsetCodeRootsIterator cset_iterator();
 
 private:
   static GrowableArray<ShenandoahNMethod*>* _recorded_nms;
