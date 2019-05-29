@@ -1930,16 +1930,20 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
         __ encode_heap_oop(cmpval);
         __ mov(rscratch1, newval);
         __ encode_heap_oop(rscratch1);
-        __ lock();
+        if (os::is_MP()) {
+          __ lock();
+        }
         // cmpval (rax) is implicitly used by this instruction
         __ cmpxchgl(rscratch1, Address(addr, 0));
       } else
 #endif
       {
-        __ lock();
+        if (os::is_MP()) {
+          __ lock();
+        }
         __ cmpxchgptr(newval, Address(addr, 0));
       }
-   } else {
+    } else {
       assert(op->code() == lir_cas_int, "lir_cas_int expected");
       if (os::is_MP()) {
         __ lock();
