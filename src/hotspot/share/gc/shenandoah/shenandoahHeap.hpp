@@ -574,12 +574,6 @@ public:
                                                size_t size,
                                                Metaspace::MetadataType mdtype);
 
-  oop obj_allocate(Klass* klass, int size, TRAPS);
-  oop array_allocate(Klass* klass, int size, int length, bool do_zero, TRAPS);
-  oop class_allocate(Klass* klass, int size, TRAPS);
-
-  uint oop_extra_words();
-
   void notify_mutator_alloc_words(size_t words, bool waste);
 
   // Shenandoah supports TLAB allocation
@@ -590,9 +584,6 @@ public:
   size_t unsafe_max_tlab_alloc(Thread *thread) const;
   size_t max_tlab_size() const;
   size_t tlab_used(Thread* ignored) const;
-
-  HeapWord* tlab_post_allocation_setup(HeapWord* obj);
-  void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap);
 
   void accumulate_statistics_tlabs();
   void resize_tlabs();

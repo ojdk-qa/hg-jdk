@@ -1378,17 +1378,6 @@ void PhaseMacroExpand::expand_allocate_common(
 
     transform_later(old_eden_top);
     // Add to heap top to get a new heap top
-
-    Node* init_size_in_bytes = size_in_bytes;
-
-#if INCLUDE_SHENANDOAHGC
-    if (UseShenandoahGC) {
-      // Allocate several words more for the Shenandoah brooks pointer.
-      size_in_bytes = new AddXNode(size_in_bytes, _igvn.MakeConX(ShenandoahForwarding::byte_size()));
-      transform_later(size_in_bytes);
-    }
-#endif
-
     Node *new_eden_top = new AddPNode(top(), old_eden_top, size_in_bytes);
     transform_later(new_eden_top);
     // Check for needing a GC; compare against heap end
@@ -1479,18 +1468,10 @@ void PhaseMacroExpand::expand_allocate_common(
                                    0, new_alloc_bytes, T_LONG);
     }
 
-#if INCLUDE_SHENANDOAHGC
-    if (UseShenandoahGC) {
-      // Bump up object for Shenandoah brooks pointer.
-      fast_oop = new AddPNode(top(), fast_oop, _igvn.MakeConX(ShenandoahForwarding::byte_size()));
-      transform_later(fast_oop);
-    }
-#endif
-
     InitializeNode* init = alloc->initialization();
     fast_oop_rawmem = initialize_object(alloc,
                                         fast_oop_ctrl, fast_oop_rawmem, fast_oop,
-                                        klass_node, length, init_size_in_bytes);
+                                        klass_node, length, size_in_bytes);
 
     // If initialization is performed by an array copy, any required
     // MemBarStoreStore was already added. If the object does not
@@ -1777,13 +1758,6 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
     if (k->is_array_klass())    // we know the exact header size in most cases:
       header_size = Klass::layout_helper_header_size(k->layout_helper());
   }
-
-#if INCLUDE_SHENANDOAHGC
-  if (UseShenandoahGC) {
-    // Initialize Shenandoah brooks pointer to point to the object itself.
-    rawmem = make_store(control, rawmem, object, ShenandoahForwarding::byte_offset(), object, T_OBJECT);
-  }
-#endif
 
   // Clear the object body, if necessary.
   if (init == NULL) {
