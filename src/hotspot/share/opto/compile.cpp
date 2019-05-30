@@ -3395,6 +3395,23 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
     }
     break;
 #if INCLUDE_SHENANDOAHGC
+  case Op_ShenandoahCompareAndSwapP:
+  case Op_ShenandoahCompareAndSwapN:
+  case Op_ShenandoahWeakCompareAndSwapN:
+  case Op_ShenandoahWeakCompareAndSwapP:
+  case Op_ShenandoahCompareAndExchangeP:
+  case Op_ShenandoahCompareAndExchangeN:
+#ifdef ASSERT
+    if( VerifyOptoOopOffsets ) {
+      MemNode* mem  = n->as_Mem();
+      // Check to see if address types have grounded out somehow.
+      const TypeInstPtr *tp = mem->in(MemNode::Address)->bottom_type()->isa_instptr();
+      ciInstanceKlass *k = tp->klass()->as_instance_klass();
+      bool oop_offset_is_sane = k->contains_field_offset(tp->offset());
+      assert( !tp || oop_offset_is_sane, "" );
+    }
+#endif
+     break;
   case Op_ShenandoahReadBarrier:
     break;
   case Op_ShenandoahWriteBarrier:

@@ -1897,6 +1897,10 @@ source %{
     case Op_CompareAndSwapN:
  // case Op_CompareAndSwapB:
  // case Op_CompareAndSwapS:
+#if INCLUDE_SHENANDOAHGC
+    case Op_ShenandoahCompareAndSwapP:
+    case Op_ShenandoahCompareAndSwapN:
+#endif
       return true;
       // These are TBD
     case Op_WeakCompareAndSwapB:
@@ -9670,7 +9674,6 @@ instruct compareAndSwapL(iRegINoSp res, indirect mem, iRegLNoSp oldval, iRegLNoS
 
 instruct compareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
 
-  predicate(!UseShenandoahGC || !ShenandoahCASBarrier || n->in(3)->in(1)->bottom_type() == TypePtr::NULL_PTR);
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
 
@@ -9689,8 +9692,7 @@ instruct compareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval
 
 instruct compareAndSwapP_shenandoah(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp, rFlagsReg cr) %{
 
-  predicate(UseShenandoahGC && ShenandoahCASBarrier && n->in(3)->in(1)->bottom_type() != TypePtr::NULL_PTR);
-  match(Set res (CompareAndSwapP mem (Binary oldval newval)));
+  match(Set res (ShenandoahCompareAndSwapP mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
 
   effect(TEMP tmp, KILL cr);
@@ -9706,7 +9708,6 @@ instruct compareAndSwapP_shenandoah(iRegINoSp res, indirect mem, iRegP oldval, i
 
 instruct compareAndSwapN(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegNNoSp newval, rFlagsReg cr) %{
 
-  predicate(!UseShenandoahGC || !ShenandoahCASBarrier || n->in(3)->in(1)->bottom_type() == TypeNarrowOop::NULL_PTR);
   match(Set res (CompareAndSwapN mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
 
@@ -9725,8 +9726,7 @@ instruct compareAndSwapN(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegNNoS
 
 instruct compareAndSwapN_shenandoah(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval, iRegNNoSp tmp, rFlagsReg cr) %{
 
-  predicate(UseShenandoahGC && ShenandoahCASBarrier && n->in(3)->in(1)->bottom_type() != TypeNarrowOop::NULL_PTR);
-  match(Set res (CompareAndSwapN mem (Binary oldval newval)));
+  match(Set res (ShenandoahCompareAndSwapN mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
 
   effect(TEMP tmp, KILL cr);
@@ -9786,7 +9786,7 @@ instruct compareAndSwapLAcq(iRegINoSp res, indirect mem, iRegLNoSp oldval, iRegL
 
 instruct compareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
 
-  predicate(needs_acquiring_load_exclusive(n) && (!UseShenandoahGC || !ShenandoahCASBarrier || n->in(3)->in(1)->bottom_type() == TypePtr::NULL_PTR));
+  predicate(needs_acquiring_load_exclusive(n));
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   ins_cost(VOLATILE_REF_COST);
 
@@ -9805,8 +9805,8 @@ instruct compareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP new
 
 instruct compareAndSwapPAcq_shenandoah(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp, rFlagsReg cr) %{
 
-  predicate(needs_acquiring_load_exclusive(n) && UseShenandoahGC && ShenandoahCASBarrier && n->in(3)->in(1)->bottom_type() != TypePtr::NULL_PTR);
-  match(Set res (CompareAndSwapP mem (Binary oldval newval)));
+  predicate(needs_acquiring_load_exclusive(n));
+  match(Set res (ShenandoahCompareAndSwapP mem (Binary oldval newval)));
   ins_cost(VOLATILE_REF_COST);
 
   effect(TEMP tmp, KILL cr);
@@ -9822,7 +9822,7 @@ instruct compareAndSwapPAcq_shenandoah(iRegINoSp res, indirect mem, iRegP oldval
 
 instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegNNoSp newval, rFlagsReg cr) %{
 
-  predicate(needs_acquiring_load_exclusive(n) && (!UseShenandoahGC || !ShenandoahCASBarrier|| n->in(3)->in(1)->bottom_type() == TypeNarrowOop::NULL_PTR));
+  predicate(needs_acquiring_load_exclusive(n));
   match(Set res (CompareAndSwapN mem (Binary oldval newval)));
   ins_cost(VOLATILE_REF_COST);
 
@@ -9841,8 +9841,8 @@ instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegN
 
 instruct compareAndSwapNAcq_shenandoah(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval, iRegNNoSp tmp, rFlagsReg cr) %{
 
-  predicate(needs_acquiring_load_exclusive(n) && UseShenandoahGC && ShenandoahCASBarrier && n->in(3)->in(1)->bottom_type() != TypeNarrowOop::NULL_PTR);
-  match(Set res (CompareAndSwapN mem (Binary oldval newval)));
+  predicate(needs_acquiring_load_exclusive(n));
+  match(Set res (ShenandoahCompareAndSwapN mem (Binary oldval newval)));
   ins_cost(VOLATILE_REF_COST);
 
   effect(TEMP tmp, KILL cr);
@@ -9939,7 +9939,6 @@ instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL ne
 %}
 
 instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
-  predicate(!UseShenandoahGC || !ShenandoahCASBarrier);
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -9955,8 +9954,7 @@ instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN ne
 %}
 
 instruct compareAndExchangeN_shenandoah(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval, iRegNNoSp tmp, rFlagsReg cr) %{
-  predicate(UseShenandoahGC && ShenandoahCASBarrier);
-  match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
+  match(Set res (ShenandoahCompareAndExchangeN mem (Binary oldval newval)));
   ins_cost(3 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, TEMP tmp, KILL cr);
   format %{
@@ -9972,7 +9970,6 @@ instruct compareAndExchangeN_shenandoah(iRegNNoSp res, indirect mem, iRegN oldva
 %}
 
 instruct compareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
-  predicate(!UseShenandoahGC || !ShenandoahCASBarrier || n->in(3)->in(1)->bottom_type() == TypePtr::NULL_PTR);
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -9988,8 +9985,7 @@ instruct compareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP ne
 %}
 
 instruct compareAndExchangeP_shenandoah(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp, rFlagsReg cr) %{
-  predicate(UseShenandoahGC && ShenandoahCASBarrier);
-  match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
+  match(Set res (ShenandoahCompareAndExchangeP mem (Binary oldval newval)));
   ins_cost(3 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, TEMP tmp, KILL cr);
   format %{
@@ -10073,7 +10069,6 @@ instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL ne
 %}
 
 instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
-  predicate(!UseShenandoahGC || !ShenandoahCASBarrier);
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -10091,8 +10086,7 @@ instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN ne
 %}
 
 instruct weakCompareAndSwapN_shenandoah(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval, iRegNNoSp tmp, rFlagsReg cr) %{
-  predicate(UseShenandoahGC && ShenandoahCASBarrier);
-  match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
+  match(Set res (ShenandoahWeakCompareAndSwapN mem (Binary oldval newval)));
   ins_cost(3 * VOLATILE_REF_COST);
   effect(TEMP tmp, KILL cr);
   format %{
@@ -10108,7 +10102,6 @@ instruct weakCompareAndSwapN_shenandoah(iRegINoSp res, indirect mem, iRegN oldva
 %}
 
 instruct weakCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
-  predicate(!UseShenandoahGC || !ShenandoahCASBarrier || n->in(3)->in(1)->bottom_type() == TypePtr::NULL_PTR);
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -10126,8 +10119,7 @@ instruct weakCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
 %}
 
 instruct weakCompareAndSwapP_shenandoah(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp, rFlagsReg cr) %{
-  predicate(UseShenandoahGC && ShenandoahCASBarrier);
-  match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
+  match(Set res (ShenandoahWeakCompareAndSwapP mem (Binary oldval newval)));
   ins_cost(3 * VOLATILE_REF_COST);
   effect(TEMP tmp, KILL cr);
   format %{
