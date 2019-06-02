@@ -42,8 +42,8 @@ import jdk.internal.vm.annotation.Contended;
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @bug 8151499 8153734
  * @modules java.base/jdk.internal.vm.annotation
- * @run main/othervm -XX:+EnableContended -XX:-RestrictContended -Xmx128m -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahHeapRegionSize=8M -XX:ContendedPaddingWidth=8192 TestHumongousReferenceObject
- * @run main/othervm -XX:+EnableContended -XX:-RestrictContended -Xmx128m -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahHeapRegionSize=8M -XX:ContendedPaddingWidth=8192 -XX:+UnlockDiagnosticVMOptions -XX:+ShenandoahVerify TestHumongousReferenceObject
+ * @run main/othervm -XX:+EnableContended -XX:-RestrictContended -Xms128m -Xmx128m -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahHeapRegionSize=8M -XX:ContendedPaddingWidth=8192 TestHumongousReferenceObject
+ * @run main/othervm -XX:+EnableContended -XX:-RestrictContended -Xms128m -Xmx128m -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahHeapRegionSize=8M -XX:ContendedPaddingWidth=8192 -XX:+UnlockDiagnosticVMOptions -XX:+ShenandoahVerify TestHumongousReferenceObject
  */
 public class TestHumongousReferenceObject {
 
