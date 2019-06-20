@@ -151,7 +151,7 @@ void ShenandoahRootEvacuator::roots_do(uint worker_id, OopClosure* oops) {
   _jni_roots.oops_do(oops, worker_id);
 
   _thread_roots.oops_do(oops, NULL, worker_id);
-  _cld_roots.clds_do(&clds, &clds, worker_id);
+  _cld_roots.cld_do(&clds, worker_id);
   _code_roots.code_blobs_do(&blobsCl, worker_id);
 
   _weak_roots.oops_do<AlwaysTrueClosure, OopClosure>(&always_true, oops, worker_id);
@@ -181,7 +181,7 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
   _jni_roots.oops_do(oops, worker_id);
 
   _thread_roots.oops_do(oops, NULL, worker_id);
-  _cld_roots.clds_do(&adjust_cld_closure, NULL, worker_id);
+  _cld_roots.cld_do(&adjust_cld_closure, worker_id);
   _code_roots.code_blobs_do(&adjust_code_closure, worker_id);
 
   _weak_roots.oops_do<AlwaysTrueClosure, OopClosure>(&always_true, oops, worker_id);
@@ -203,7 +203,7 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
 
    _serial_roots.oops_do(oops, 0);
    _jni_roots.oops_do(oops, 0);
-   _cld_roots.clds_do(&clds, &clds, 0);
+   _cld_roots.cld_do(&clds, 0);
    _thread_roots.threads_do(&tc_cl, 0);
    _code_roots.code_blobs_do(&code, 0);
  }
@@ -218,6 +218,6 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
 
    _serial_roots.oops_do(oops, 0);
    _jni_roots.oops_do(oops, 0);
-   _cld_roots.clds_do(&clds, NULL, 0);
+   _cld_roots.always_strong_cld_do(&clds, 0);
    _thread_roots.threads_do(&tc_cl, 0);
  }
