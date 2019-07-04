@@ -129,7 +129,7 @@ void ShenandoahRootScanner<ITR>::strong_roots_do(uint worker_id, OopClosure* oop
 template <typename ITR>
 void ShenandoahRootScanner<ITR>::roots_do(uint worker_id, OopClosure* oops, CLDClosure* clds, CodeBlobClosure* code, ThreadClosure *tc) {
   assert(!ShenandoahHeap::heap()->unload_classes() ||
-          ShenandoahHeap::heap()->heuristics()->can_do_traversal_gc(),
+          ShenandoahHeap::heap()->is_traversal_mode(),
           "No class unloading or traversal GC");
   ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);
   ResourceMark rm;
