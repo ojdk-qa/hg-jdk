@@ -82,7 +82,7 @@ public:
 
 class ShenandoahWeakRoots {
   OopStorage::ParState<false, false> _par_state_string;
-  volatile bool                             _claimed;
+  volatile bool                      _claimed;
 
 public:
   ShenandoahWeakRoots(uint n_workers);

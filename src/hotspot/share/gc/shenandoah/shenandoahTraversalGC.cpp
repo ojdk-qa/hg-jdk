@@ -617,12 +617,7 @@ void ShenandoahTraversalGC::final_traversal_collection() {
     _heap->mark_complete_marking_context();
 
     fixup_roots();
-    if (_heap->unload_classes()) {
-      _heap->unload_classes_and_cleanup_tables(false);
-    } else {
-      ShenandoahIsAliveSelector alive;
-      StringTable::unlink(alive.is_alive_closure());
-    }
+    _heap->parallel_cleaning(false);
 
     // Resize metaspace
     MetaspaceGC::compute_new_size();

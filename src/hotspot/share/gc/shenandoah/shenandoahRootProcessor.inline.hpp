@@ -25,6 +25,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_INLINE_HPP
 
 #include "classfile/stringTable.hpp"
+#include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "gc/shenandoah/shenandoahTimingTracker.hpp"
@@ -36,7 +37,8 @@ void ShenandoahWeakRoots::oops_do(IsAlive* is_alive, KeepAlive* keep_alive, uint
   if (!_claimed && Atomic::cmpxchg(true, &_claimed, false) == false) {
     WeakProcessor::weak_oops_do(is_alive, keep_alive);
   }
-  StringTable::possibly_parallel_oops_do(&_par_state_string, keep_alive);
+
+  _par_state_string.weak_oops_do<IsAlive, KeepAlive>(is_alive, keep_alive);
 }
 
 template <bool SINGLE_THREADED>
