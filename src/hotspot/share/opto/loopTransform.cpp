@@ -2778,6 +2778,14 @@ void IdealLoopTree::adjust_loop_exit_prob( PhaseIdealLoop *phase ) {
             ((bol->in(1)->Opcode() == Op_StorePConditional ) ||
              (bol->in(1)->Opcode() == Op_StoreIConditional ) ||
              (bol->in(1)->Opcode() == Op_StoreLConditional ) ||
+#if INCLUDE_SHENANDOAHGC
+             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndExchangeP ) ||
+             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndExchangeN ) ||
+             (bol->in(1)->Opcode() == Op_ShenandoahWeakCompareAndSwapP ) ||
+             (bol->in(1)->Opcode() == Op_ShenandoahWeakCompareAndSwapN ) ||
+             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndSwapP ) ||
+             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndSwapN ) ||
+#endif
              (bol->in(1)->Opcode() == Op_CompareAndExchangeB ) ||
              (bol->in(1)->Opcode() == Op_CompareAndExchangeS ) ||
              (bol->in(1)->Opcode() == Op_CompareAndExchangeI ) ||
@@ -2795,16 +2803,7 @@ void IdealLoopTree::adjust_loop_exit_prob( PhaseIdealLoop *phase ) {
              (bol->in(1)->Opcode() == Op_CompareAndSwapI ) ||
              (bol->in(1)->Opcode() == Op_CompareAndSwapL ) ||
              (bol->in(1)->Opcode() == Op_CompareAndSwapP ) ||
-             (bol->in(1)->Opcode() == Op_CompareAndSwapN ) ||
-#if INCLUDE_SHENANDOAHGC
-             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndExchangeP ) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndExchangeN ) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahWeakCompareAndSwapP ) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahWeakCompareAndSwapN ) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndSwapP ) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndSwapN )
-#endif
-             ))
+             (bol->in(1)->Opcode() == Op_CompareAndSwapN )))
           return;               // Allocation loops RARELY take backedge
         // Find the OTHER exit path from the IF
         Node* ex = iff->proj_out(1-test_con);
