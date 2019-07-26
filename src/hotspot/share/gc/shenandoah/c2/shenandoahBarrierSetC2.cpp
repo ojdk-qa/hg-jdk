@@ -748,7 +748,7 @@ bool ShenandoahBarrierSetC2::optimize_loops(PhaseIdealLoop* phase, LoopOptsMode 
 }
 
 bool ShenandoahBarrierSetC2::array_copy_requires_gc_barriers(BasicType type) const {
-  return false;
+  return type == T_OBJECT || type == T_ARRAY;
 }
 
 bool ShenandoahBarrierSetC2::clone_needs_postbarrier(ArrayCopyNode *ac, PhaseIterGVN& igvn) {
