@@ -154,6 +154,9 @@ int ArrayCopyNode::get_count(PhaseGVN *phase) const {
 
 #if INCLUDE_SHENANDOAHGC
 Node* ArrayCopyNode::shenandoah_add_storeval_barrier(PhaseGVN *phase, bool can_reshape, Node* v, MergeMemNode* mem, Node*& ctl) {
+  if (ShenandoahLoadRefBarrier) {
+    return phase->transform(new ShenandoahLoadReferenceBarrierNode(NULL, v));
+  }
   if (ShenandoahStoreValEnqueueBarrier) {
     return phase->transform(new ShenandoahEnqueueBarrierNode(v));
   }
