@@ -614,7 +614,8 @@ private:
 
 public:
   ParallelSPCleanupThreadClosure(DeflateMonitorCounters* counters) :
-    _nmethod_cl(NMethodSweeper::prepare_mark_active_nmethods()), _counters(counters) {}
+    _counters(counters),
+    _nmethod_cl(NMethodSweeper::prepare_mark_active_nmethods()) {}
 
   void do_thread(Thread* thread) {
     ObjectSynchronizer::deflate_thread_local_monitors(thread, _counters);

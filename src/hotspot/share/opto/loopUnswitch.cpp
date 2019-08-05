@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,6 @@
 #include "opto/loopnode.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/rootnode.hpp"
-#include "utilities/macros.hpp"
-#if INCLUDE_SHENANDOAHGC
-#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
-#endif
 
 //================= Loop Unswitching =====================
 //
@@ -58,7 +54,7 @@
 //------------------------------policy_unswitching-----------------------------
 // Return TRUE or FALSE if the loop should be unswitched
 // (ie. clone loop with an invariant test that does not exit the loop)
-bool IdealLoopTree::policy_unswitching(PhaseIdealLoop *phase) const {
+bool IdealLoopTree::policy_unswitching( PhaseIdealLoop *phase ) const {
   if( !LoopUnswitching ) {
     return false;
   }
@@ -90,7 +86,6 @@ IfNode* PhaseIdealLoop::find_unswitching_candidate(const IdealLoopTree *loop) co
   LoopNode *head = loop->_head->as_Loop();
   IfNode* unswitch_iff = NULL;
   Node* n = head->in(LoopNode::LoopBackControl);
-  int loop_has_sfpts = -1;
   while (n != head) {
     Node* n_dom = idom(n);
     if (n->is_Region()) {
@@ -117,7 +112,7 @@ IfNode* PhaseIdealLoop::find_unswitching_candidate(const IdealLoopTree *loop) co
 // Clone loop with an invariant test (that does not exit) and
 // insert a clone of the test that selects which version to
 // execute.
-void PhaseIdealLoop::do_unswitching(IdealLoopTree *loop, Node_List &old_new) {
+void PhaseIdealLoop::do_unswitching (IdealLoopTree *loop, Node_List &old_new) {
 
   // Find first invariant test that doesn't exit the loop
   LoopNode *head = loop->_head->as_Loop();

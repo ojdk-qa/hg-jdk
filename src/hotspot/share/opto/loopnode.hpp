@@ -555,7 +555,7 @@ public:
 
   // Return TRUE or FALSE if the loop should be unswitched -- clone
   // loop with an invariant test
-  bool policy_unswitching(PhaseIdealLoop *phase) const;
+  bool policy_unswitching( PhaseIdealLoop *phase ) const;
 
   // Micro-benchmark spamming.  Remove empty loops.
   bool policy_do_remove_empty_loop( PhaseIdealLoop *phase );
@@ -1172,7 +1172,7 @@ public:
   // Clone loop with an invariant test (that does not exit) and
   // insert a clone of the test that selects which version to
   // execute.
-  void do_unswitching(IdealLoopTree *loop, Node_List &old_new);
+  void do_unswitching (IdealLoopTree *loop, Node_List &old_new);
 
   // Find candidate "if" for unswitching
   IfNode* find_unswitching_candidate(const IdealLoopTree *loop) const;
@@ -1267,7 +1267,6 @@ public:
   Node *split_thru_region( Node *n, Node *region );
   // Split Node 'n' through merge point if there is enough win.
   Node *split_thru_phi( Node *n, Node *region, int policy );
-
   // Found an If getting its condition-code input from a Phi in the
   // same block.  Split thru the Region.
   void do_split_if( Node *iff );

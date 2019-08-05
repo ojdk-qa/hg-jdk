@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -455,8 +455,6 @@ public:
   // 64 bits of each vector register.
   void push_call_clobbered_registers();
   void pop_call_clobbered_registers();
-  void push_call_clobbered_fp_registers();
-  void pop_call_clobbered_fp_registers();
 
   // now mov instructions for loading absolute addresses and 32 or
   // 64 bit integers

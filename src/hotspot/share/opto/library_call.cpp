@@ -1134,7 +1134,6 @@ bool LibraryCallKit::inline_string_equals(StrIntrinsicNode::ArgEnc ae) {
   Node* phi = new PhiNode(region, TypeInt::BOOL);
 
   if (!stopped()) {
-
     // Get start addr and length of first argument
     Node* arg1_start  = array_element_address(arg1, intcon(0), T_BYTE);
     Node* arg1_cnt    = load_array_length(arg1);
@@ -1199,7 +1198,6 @@ bool LibraryCallKit::inline_hasNegatives() {
   if (stopped()) {
     return true;
   }
-
   Node* ba_start = array_element_address(ba, offset, T_BYTE);
   Node* result = new HasNegativesNode(control(), memory(TypeAryPtr::BYTES), ba_start, len);
   set_result(_gvn.transform(result));
@@ -1655,7 +1653,6 @@ bool LibraryCallKit::inline_string_getCharsU() {
   }
 
   if (!stopped()) {
-
     // Calculate starting addresses.
     Node* src_start = array_element_address(src, src_begin, T_BYTE);
     Node* dst_start = array_element_address(dst, dst_begin, T_CHAR);
@@ -4312,7 +4309,6 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
         if (is_obja != NULL) {
           PreserveJVMState pjvms2(this);
           set_control(is_obja);
-
           // Generate a direct call to the right arraycopy function(s).
           Node* alloc = tightly_coupled_allocation(alloc_obj, NULL);
           ArrayCopyNode* ac = ArrayCopyNode::make(this, true, obj, intcon(0), alloc_obj, intcon(0), obj_length, alloc != NULL, false);
@@ -5813,7 +5809,6 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
   Node* dest                       = argument(4);
   Node* dest_offset                = argument(5);
 
-
   // (1) src and dest are arrays.
   const Type* src_type = src->Value(&_gvn);
   const Type* dest_type = dest->Value(&_gvn);
@@ -5858,7 +5853,6 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
 
   // similarly, get the start address of the r vector
   Node* objRvec = load_field_from_object(cipherBlockChaining_object, "r", "[B", /*is_exact*/ false);
-
   if (objRvec == NULL) return false;
   Node* r_start = array_element_address(objRvec, intcon(0), T_BYTE);
 
@@ -6001,6 +5995,7 @@ Node * LibraryCallKit::get_original_key_start_from_aescrypt_object(Node *aescryp
   Node* objAESCryptKey = load_field_from_object(aescrypt_object, "lastKey", "[B", /*is_exact*/ false);
   assert (objAESCryptKey != NULL, "wrong version of com.sun.crypto.provider.AESCrypt");
   if (objAESCryptKey == NULL) return (Node *) NULL;
+
   // now have the array, need to get the start address of the lastKey array
   Node* original_k_start = array_element_address(objAESCryptKey, intcon(0), T_BYTE);
   return original_k_start;
@@ -6018,9 +6013,6 @@ Node * LibraryCallKit::get_original_key_start_from_aescrypt_object(Node *aescryp
 Node* LibraryCallKit::inline_cipherBlockChaining_AESCrypt_predicate(bool decrypting) {
   // The receiver was checked for NULL already.
   Node* objCBC = argument(0);
-
-  Node* src = argument(1);
-  Node* dest = argument(4);
 
   // Load embeddedCipher field of CipherBlockChaining object.
   Node* embeddedCipherObj = load_field_from_object(objCBC, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;", /*is_exact*/ false);
@@ -6040,7 +6032,6 @@ Node* LibraryCallKit::inline_cipherBlockChaining_AESCrypt_predicate(bool decrypt
     set_control(top()); // no regular fast path
     return ctrl;
   }
-
   ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
 
   Node* instof = gen_instanceof(embeddedCipherObj, makecon(TypeKlassPtr::make(instklass_AESCrypt)));
@@ -6058,7 +6049,8 @@ Node* LibraryCallKit::inline_cipherBlockChaining_AESCrypt_predicate(bool decrypt
   // see the original java code for why.
   RegionNode* region = new RegionNode(3);
   region->init_req(1, instof_false);
-
+  Node* src = argument(1);
+  Node* dest = argument(4);
   Node* cmp_src_dest = _gvn.transform(new CmpPNode(src, dest));
   Node* bool_src_dest = _gvn.transform(new BoolNode(cmp_src_dest, BoolTest::eq));
   Node* src_dest_conjoint = generate_guard(bool_src_dest, NULL, PROB_MIN);

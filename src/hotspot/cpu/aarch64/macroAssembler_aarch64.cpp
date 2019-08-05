@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2590,8 +2590,9 @@ void MacroAssembler::c_stub_prolog(int gp_arg_count, int fp_arg_count, int ret_t
 }
 #endif
 
-void MacroAssembler::push_call_clobbered_fp_registers() {
+void MacroAssembler::push_call_clobbered_registers() {
   int step = 4 * wordSize;
+  push(RegSet::range(r0, r18) - RegSet::of(rscratch1, rscratch2), sp);
   sub(sp, sp, step);
   mov(rscratch1, -step);
   // Push v0-v7, v16-v31.
@@ -2604,21 +2605,13 @@ void MacroAssembler::push_call_clobbered_fp_registers() {
       as_FloatRegister(3), T1D, Address(sp));
 }
 
-void MacroAssembler::pop_call_clobbered_fp_registers() {
+void MacroAssembler::pop_call_clobbered_registers() {
   for (int i = 0; i < 32; i += 4) {
     if (i <= v7->encoding() || i >= v16->encoding())
       ld1(as_FloatRegister(i), as_FloatRegister(i+1), as_FloatRegister(i+2),
           as_FloatRegister(i+3), T1D, Address(post(sp, 4 * wordSize)));
   }
-}
 
-void MacroAssembler::push_call_clobbered_registers() {
-  push(RegSet::range(r0, r18) - RegSet::of(rscratch1, rscratch2), sp);
-  push_call_clobbered_fp_registers();
-}
-
-void MacroAssembler::pop_call_clobbered_registers() {
-  pop_call_clobbered_fp_registers();
   pop(RegSet::range(r0, r18) - RegSet::of(rscratch1, rscratch2), sp);
 }
 

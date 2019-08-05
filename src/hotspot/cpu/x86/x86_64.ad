@@ -544,12 +544,6 @@ source_hpp %{
 #endif
 #if INCLUDE_SHENANDOAHGC
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
-#else
-// This is normally available through shenandoah_globals.hpp, but if Shenandoah
-// compilation is disabled, there is no such header. Fake the constants for predicates
-// to work. This workaround would be removed as we backport more stuff, including
-// the split shenandoah_x86_64.ad.
-#define ShenandoahCASBarrier false
 #endif
 %}
 
