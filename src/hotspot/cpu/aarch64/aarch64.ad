@@ -1000,10 +1000,6 @@ source_hpp %{
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "opto/addnode.hpp"
-#if INCLUDE_SHENANDOAHGC
-#include "gc/shenandoah/shenandoahBarrierSet.hpp"
-#include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
-#endif
 
 class CallStubImpl {
 
@@ -4388,15 +4384,6 @@ encode %{
   %}
 
 
-  enc_class aarch64_enc_cmpxchg_oop_shenandoah(memory mem, iRegP oldval, iRegP newval, iRegPNoSp tmp, iRegINoSp res) %{
-    MacroAssembler _masm(&cbuf);
-    guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
-    Register tmp = $tmp$$Register;
-    __ mov(tmp, $oldval$$Register); // Must not clobber oldval.
-    ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $mem$$Register, tmp, $newval$$Register,
-                                                   /*acquire*/ false, /*release*/ true, /*weak*/ false, /*is_cae*/ false, $res$$Register);
-  %}
-
   // The only difference between aarch64_enc_cmpxchg and
   // aarch64_enc_cmpxchg_acq is that we use load-acquire in the
   // CompareAndSwap sequence to serve as a barrier on acquiring a
@@ -4417,16 +4404,6 @@ encode %{
                /*weak*/ false, noreg);
   %}
 
-
-  enc_class aarch64_enc_cmpxchg_acq_oop_shenandoah(memory mem, iRegP oldval, iRegP newval, iRegPNoSp tmp, iRegINoSp res) %{
-    MacroAssembler _masm(&cbuf);
-    guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
-    Register tmp = $tmp$$Register;
-    __ mov(tmp, $oldval$$Register); // Must not clobber oldval.
-    ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $mem$$Register, tmp, $newval$$Register,
-                                                   /*acquire*/ true, /*release*/ true, /*weak*/ false, /*is_cae*/ false,
-                                                   $res$$Register);
-  %}
 
   // auxiliary used for CompareAndSwapX to set result register
   enc_class aarch64_enc_cset_eq(iRegINoSp res) %{
@@ -9674,22 +9651,6 @@ instruct compareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwapP_shenandoah(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp, rFlagsReg cr) %{
-
-  match(Set res (ShenandoahCompareAndSwapP mem (Binary oldval newval)));
-  ins_cost(2 * VOLATILE_REF_COST);
-
-  effect(TEMP tmp, KILL cr);
-
-  format %{
-    "cmpxchg_shenandoah_oop $mem, $oldval, $newval\t# (ptr) if $mem == $oldval then $mem <-- $newval with temp $tmp"
-  %}
-
-  ins_encode(aarch64_enc_cmpxchg_oop_shenandoah(mem, oldval, newval, tmp, res));
-
-  ins_pipe(pipe_slow);
-%}
-
 instruct compareAndSwapN(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegNNoSp newval, rFlagsReg cr) %{
 
   match(Set res (CompareAndSwapN mem (Binary oldval newval)));
@@ -9704,26 +9665,6 @@ instruct compareAndSwapN(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegNNoS
 
  ins_encode(aarch64_enc_cmpxchgw(mem, oldval, newval),
             aarch64_enc_cset_eq(res));
-
-  ins_pipe(pipe_slow);
-%}
-
-instruct compareAndSwapN_shenandoah(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval, iRegNNoSp tmp, rFlagsReg cr) %{
-
-  match(Set res (ShenandoahCompareAndSwapN mem (Binary oldval newval)));
-  ins_cost(2 * VOLATILE_REF_COST);
-
-  effect(TEMP tmp, KILL cr);
-
-  format %{
-    "cmpxchgw_shenandoah_narrow_oop $mem, $oldval, $newval\t# (ptr) if $mem == $oldval then $mem <-- $newval with temp $tmp"
-  %}
-
-  ins_encode %{
-    Register tmp = $tmp$$Register;
-    __ mov(tmp, $oldval$$Register); // Must not clobber oldval.
-    ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $mem$$Register, tmp, $newval$$Register, /*acquire*/ false, /*release*/ true, /*weak*/ false, /*is_cae*/ false, $res$$Register);
-  %}
 
   ins_pipe(pipe_slow);
 %}
@@ -9787,23 +9728,6 @@ instruct compareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP new
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwapPAcq_shenandoah(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp, rFlagsReg cr) %{
-
-  predicate(needs_acquiring_load_exclusive(n));
-  match(Set res (ShenandoahCompareAndSwapP mem (Binary oldval newval)));
-  ins_cost(VOLATILE_REF_COST);
-
-  effect(TEMP tmp, KILL cr);
-
-  format %{
-    "cmpxchg_acq_shenandoah_oop $mem, $oldval, $newval\t# (ptr) if $mem == $oldval then $mem <-- $newval with temp $tmp"
-  %}
-
-  ins_encode(aarch64_enc_cmpxchg_acq_oop_shenandoah(mem, oldval, newval, tmp, res));
-
-  ins_pipe(pipe_slow);
-%}
-
 instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegNNoSp newval, rFlagsReg cr) %{
 
   predicate(needs_acquiring_load_exclusive(n));
@@ -9823,26 +9747,6 @@ instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegN
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwapNAcq_shenandoah(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval, iRegNNoSp tmp, rFlagsReg cr) %{
-
-  predicate(needs_acquiring_load_exclusive(n));
-  match(Set res (ShenandoahCompareAndSwapN mem (Binary oldval newval)));
-  ins_cost(VOLATILE_REF_COST);
-
-  effect(TEMP tmp, KILL cr);
-
- format %{
-    "cmpxchgw_acq_shenandoah_narrow_oop $mem, $oldval, $newval\t# (ptr) if $mem == $oldval then $mem <-- $newval with temp $tmp"
- %}
-
-  ins_encode %{
-    Register tmp = $tmp$$Register;
-    __ mov(tmp, $oldval$$Register); // Must not clobber oldval.
-    ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $mem$$Register, tmp, $newval$$Register, /*acquire*/ true, /*release*/ true, /*weak*/ false, /*is_cae*/ false, $res$$Register);
-  %}
-
-  ins_pipe(pipe_slow);
-%}
 
 // ---------------------------------------------------------------------
 
@@ -9937,22 +9841,6 @@ instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN ne
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndExchangeN_shenandoah(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval, iRegNNoSp tmp, rFlagsReg cr) %{
-  match(Set res (ShenandoahCompareAndExchangeN mem (Binary oldval newval)));
-  ins_cost(3 * VOLATILE_REF_COST);
-  effect(TEMP_DEF res, TEMP tmp, KILL cr);
-  format %{
-    "cmpxchg_oop_shenandoah $res = $mem, $oldval, $newval\t# (narrow oop, weak) if $mem == $oldval then $mem <-- $newval"
-  %}
-  ins_encode %{
-    Register tmp = $tmp$$Register;
-    __ mov(tmp, $oldval$$Register); // Must not clobber oldval.
-    ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $mem$$Register, tmp, $newval$$Register,
-                   /*acquire*/ false, /*release*/ true, /*weak*/ false, /*is_cae*/ true, $res$$Register);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 instruct compareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
@@ -9964,22 +9852,6 @@ instruct compareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP ne
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
                Assembler::xword, /*acquire*/ false, /*release*/ true,
                /*weak*/ false, $res$$Register);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct compareAndExchangeP_shenandoah(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp, rFlagsReg cr) %{
-  match(Set res (ShenandoahCompareAndExchangeP mem (Binary oldval newval)));
-  ins_cost(3 * VOLATILE_REF_COST);
-  effect(TEMP_DEF res, TEMP tmp, KILL cr);
-  format %{
-    "cmpxchg_oop_shenandoah $mem, $oldval, $newval\t# (ptr) if $mem == $oldval then $mem <-- $newval with temp $tmp"
-  %}
-  ins_encode %{
-    Register tmp = $tmp$$Register;
-    __ mov(tmp, $oldval$$Register); // Must not clobber oldval.
-    ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $mem$$Register, tmp, $newval$$Register,
-                   /*acquire*/ false, /*release*/ true, /*weak*/ false, /*is_cae*/ true, $res$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10069,22 +9941,6 @@ instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN ne
   ins_pipe(pipe_slow);
 %}
 
-instruct weakCompareAndSwapN_shenandoah(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval, iRegNNoSp tmp, rFlagsReg cr) %{
-  match(Set res (ShenandoahWeakCompareAndSwapN mem (Binary oldval newval)));
-  ins_cost(3 * VOLATILE_REF_COST);
-  effect(TEMP tmp, KILL cr);
-  format %{
-    "cmpxchg_oop_shenandoah $res = $mem, $oldval, $newval\t# (narrow oop, weak) if $mem == $oldval then $mem <-- $newval"
-  %}
-  ins_encode %{
-    Register tmp = $tmp$$Register;
-    __ mov(tmp, $oldval$$Register); // Must not clobber oldval.
-    ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $mem$$Register, tmp, $newval$$Register,
-                   /*acquire*/ false, /*release*/ true, /*weak*/ true, /*is_cae*/ false, $res$$Register);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 instruct weakCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
@@ -10102,21 +9958,6 @@ instruct weakCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
   ins_pipe(pipe_slow);
 %}
 
-instruct weakCompareAndSwapP_shenandoah(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp, rFlagsReg cr) %{
-  match(Set res (ShenandoahWeakCompareAndSwapP mem (Binary oldval newval)));
-  ins_cost(3 * VOLATILE_REF_COST);
-  effect(TEMP tmp, KILL cr);
-  format %{
-    "cmpxchg_oop_shenandoah $res = $mem, $oldval, $newval\t# (ptr, weak) if $mem == $oldval then $mem <-- $newval"
-  %}
-  ins_encode %{
-    Register tmp = $tmp$$Register;
-    __ mov(tmp, $oldval$$Register); // Must not clobber oldval.
-    ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm, $mem$$Register, tmp, $newval$$Register,
-                   /*acquire*/ false, /*release*/ true, /*weak*/ true, /*is_cae*/ false, $res$$Register);
-  %}
-  ins_pipe(pipe_slow);
-%}
 // END This section of the file is automatically generated. Do not edit --------------
 // ---------------------------------------------------------------------
 
