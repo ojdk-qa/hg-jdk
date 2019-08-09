@@ -1111,6 +1111,9 @@ bool LibraryCallKit::inline_string_compareTo(StrIntrinsicNode::ArgEnc ae) {
   Node* arg1 = argument(0);
   Node* arg2 = argument(1);
 
+  arg1 = must_be_not_null(arg1, true);
+  arg2 = must_be_not_null(arg2, true);
+
   // Get start addr and length of first argument
   Node* arg1_start  = array_element_address(arg1, intcon(0), T_BYTE);
   Node* arg1_cnt    = load_array_length(arg1);
@@ -1134,6 +1137,10 @@ bool LibraryCallKit::inline_string_equals(StrIntrinsicNode::ArgEnc ae) {
   Node* phi = new PhiNode(region, TypeInt::BOOL);
 
   if (!stopped()) {
+
+    arg1 = must_be_not_null(arg1, true);
+    arg2 = must_be_not_null(arg2, true);
+
     // Get start addr and length of first argument
     Node* arg1_start  = array_element_address(arg1, intcon(0), T_BYTE);
     Node* arg1_cnt    = load_array_length(arg1);
@@ -1192,6 +1199,8 @@ bool LibraryCallKit::inline_hasNegatives() {
   Node* ba         = argument(0);
   Node* offset     = argument(1);
   Node* len        = argument(2);
+
+  ba = must_be_not_null(ba, true);
 
   // Range checks
   generate_string_range_check(ba, offset, len, false);
@@ -1265,6 +1274,9 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
   RegionNode* result_rgn = new RegionNode(4);
   Node*       result_phi = new PhiNode(result_rgn, TypeInt::INT);
 
+  src = must_be_not_null(src, true);
+  tgt = must_be_not_null(tgt, true);
+
   // Get start addr and length of source string
   Node* src_start = array_element_address(src, intcon(0), T_BYTE);
   Node* src_count = load_array_length(src);
@@ -1308,6 +1320,9 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   Node* tgt         = argument(2); // byte[]
   Node* tgt_count   = argument(3); // char count
   Node* from_index  = argument(4); // char index
+
+  src = must_be_not_null(src, true);
+  tgt = must_be_not_null(tgt, true);
 
   // Multiply byte array index by 2 if String is UTF16 encoded
   Node* src_offset = (ae == StrIntrinsicNode::LL) ? from_index : _gvn.transform(new LShiftINode(from_index, intcon(1)));
@@ -1394,6 +1409,8 @@ bool LibraryCallKit::inline_string_indexOfChar() {
   Node* from_index  = argument(2);
   Node* max         = argument(3);
 
+  src = must_be_not_null(src, true);
+
   Node* src_offset = _gvn.transform(new LShiftINode(from_index, intcon(1)));
   Node* src_start = array_element_address(src, src_offset, T_BYTE);
   Node* src_count = _gvn.transform(new SubINode(max, from_index));
@@ -1463,6 +1480,9 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
   assert((compress && dst_elem == T_BYTE && (src_elem == T_BYTE || src_elem == T_CHAR)) ||
          (!compress && src_elem == T_BYTE && (dst_elem == T_BYTE || dst_elem == T_CHAR)),
          "Unsupported array types for inline_string_copy");
+
+  src = must_be_not_null(src, true);
+  dst = must_be_not_null(dst, true);
 
   // Convert char[] offsets to byte[] offsets
   bool convert_src = (compress && src_elem == T_BYTE);
@@ -1719,6 +1739,8 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
   if (!is_store && value->is_Con() && index->is_Con()) {
     return false;
   }
+
+  value = must_be_not_null(value, true);
 
   Node* adr = array_element_address(value, index, T_CHAR);
   if (adr->is_top()) {
@@ -4900,6 +4922,9 @@ bool LibraryCallKit::inline_encodeISOArray() {
   Node *dst_offset  = argument(3);
   Node *length      = argument(4);
 
+  src = must_be_not_null(src, true);
+  dst = must_be_not_null(dst, true);
+
   const Type* src_type = src->Value(&_gvn);
   const Type* dst_type = dst->Value(&_gvn);
   const TypeAryPtr* top_src = src_type->isa_aryptr();
@@ -4951,6 +4976,9 @@ bool LibraryCallKit::inline_multiplyToLen() {
   Node* y    = argument(2);
   Node* ylen = argument(3);
   Node* z    = argument(4);
+
+  x = must_be_not_null(x, true);
+  y = must_be_not_null(y, true);
 
   const Type* x_type = x->Value(&_gvn);
   const Type* y_type = y->Value(&_gvn);
@@ -5062,6 +5090,9 @@ bool LibraryCallKit::inline_squareToLen() {
   Node* z    = argument(2);
   Node* zlen = argument(3);
 
+  x = must_be_not_null(x, true);
+  z = must_be_not_null(z, true);
+
   const Type* x_type = x->Value(&_gvn);
   const Type* z_type = z->Value(&_gvn);
   const TypeAryPtr* top_x = x_type->isa_aryptr();
@@ -5108,6 +5139,8 @@ bool LibraryCallKit::inline_mulAdd() {
   Node* offset   = argument(2);
   Node* len      = argument(3);
   Node* k        = argument(4);
+
+  out = must_be_not_null(out, true);
 
   const Type* out_type = out->Value(&_gvn);
   const Type* in_type = in->Value(&_gvn);
@@ -5361,6 +5394,7 @@ bool LibraryCallKit::inline_updateBytesCRC32() {
   }
 
   // 'src_start' points to src array + scaled offset
+  src = must_be_not_null(src, true);
   Node* src_start = array_element_address(src, offset, src_elem);
 
   // We assume that range check is done by caller.
@@ -5449,10 +5483,12 @@ bool LibraryCallKit::inline_updateBytesCRC32C() {
   }
 
   // 'src_start' points to src array + scaled offset
+  src = must_be_not_null(src, true);
   Node* src_start = array_element_address(src, offset, src_elem);
 
   // static final int[] byteTable in class CRC32C
   Node* table = get_table_from_crc32c_class(callee()->holder());
+  table = must_be_not_null(table, true);
   Node* table_start = array_element_address(table, intcon(0), T_INT);
 
   // We assume that range check is done by caller.
@@ -5496,6 +5532,7 @@ bool LibraryCallKit::inline_updateDirectByteBufferCRC32C() {
 
   // static final int[] byteTable in class CRC32C
   Node* table = get_table_from_crc32c_class(callee()->holder());
+  table = must_be_not_null(table, true);
   Node* table_start = array_element_address(table, intcon(0), T_INT);
 
   // Call the stub.
@@ -5739,6 +5776,9 @@ bool LibraryCallKit::inline_aescrypt_Block(vmIntrinsics::ID id) {
   Node* dest            = argument(3);
   Node* dest_offset     = argument(4);
 
+  src = must_be_not_null(src, true);
+  dest = must_be_not_null(dest, true);
+
   // (1) src and dest are arrays.
   const Type* src_type = src->Value(&_gvn);
   const Type* dest_type = dest->Value(&_gvn);
@@ -5808,6 +5848,9 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
   Node* len                        = argument(3);
   Node* dest                       = argument(4);
   Node* dest_offset                = argument(5);
+
+  src = must_be_not_null(src, false);
+  dest = must_be_not_null(dest, false);
 
   // (1) src and dest are arrays.
   const Type* src_type = src->Value(&_gvn);
@@ -6014,6 +6057,9 @@ Node* LibraryCallKit::inline_cipherBlockChaining_AESCrypt_predicate(bool decrypt
   // The receiver was checked for NULL already.
   Node* objCBC = argument(0);
 
+  Node* src = argument(1);
+  Node* dest = argument(4);
+
   // Load embeddedCipher field of CipherBlockChaining object.
   Node* embeddedCipherObj = load_field_from_object(objCBC, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;", /*is_exact*/ false);
 
@@ -6032,6 +6078,10 @@ Node* LibraryCallKit::inline_cipherBlockChaining_AESCrypt_predicate(bool decrypt
     set_control(top()); // no regular fast path
     return ctrl;
   }
+
+  src = must_be_not_null(src, true);
+  dest = must_be_not_null(dest, true);
+
   ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
 
   Node* instof = gen_instanceof(embeddedCipherObj, makecon(TypeKlassPtr::make(instklass_AESCrypt)));
@@ -6049,8 +6099,7 @@ Node* LibraryCallKit::inline_cipherBlockChaining_AESCrypt_predicate(bool decrypt
   // see the original java code for why.
   RegionNode* region = new RegionNode(3);
   region->init_req(1, instof_false);
-  Node* src = argument(1);
-  Node* dest = argument(4);
+
   Node* cmp_src_dest = _gvn.transform(new CmpPNode(src, dest));
   Node* bool_src_dest = _gvn.transform(new BoolNode(cmp_src_dest, BoolTest::eq));
   Node* src_dest_conjoint = generate_guard(bool_src_dest, NULL, PROB_MIN);
@@ -6116,6 +6165,10 @@ bool LibraryCallKit::inline_ghash_processBlocks() {
   Node* len            = argument(2);
   Node* state          = argument(3);
   Node* subkeyH        = argument(4);
+
+  state = must_be_not_null(state, true);
+  subkeyH = must_be_not_null(subkeyH, true);
+  data = must_be_not_null(data, true);
 
   Node* state_start  = array_element_address(state, intcon(0), T_LONG);
   assert(state_start, "state is NULL");
@@ -6190,6 +6243,7 @@ bool LibraryCallKit::inline_sha_implCompress(vmIntrinsics::ID id) {
     return false;
   }
   // 'src_start' points to src array + offset
+  src = must_be_not_null(src, true);
   Node* src_start = array_element_address(src, ofs, src_elem);
   Node* state = NULL;
   address stubAddr;
@@ -6259,6 +6313,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
     return false;
   }
   // 'src_start' points to src array + offset
+  src = must_be_not_null(src, false);
   Node* src_start = array_element_address(src, ofs, src_elem);
 
   const char* klass_SHA_name = NULL;
