@@ -1378,11 +1378,6 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
                 }
                 assert(!(i < imax), "sanity");
               }
-#if INCLUDE_SHENANDOAHGC
-            // TODO: Move into below call to enqueue_useful_gc_barrier()
-            } else if (in->Opcode() == Op_AddP && ShenandoahBarrierSetC2::has_only_shenandoah_wb_pre_uses(in)) {
-              add_users_to_worklist(in);
-#endif
             } else {
               BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(_worklist, in);
             }
@@ -2095,11 +2090,10 @@ void Node::set_req_X( uint i, Node *n, PhaseIterGVN *igvn ) {
     default:
       break;
     }
-#if INCLUDE_SHENANDOAHGC
-    if (old->Opcode() == Op_AddP && ShenandoahBarrierSetC2::has_only_shenandoah_wb_pre_uses(old)) {
-      igvn->add_users_to_worklist(old);
+    if (UseShenandoahGC) {
+      // TODO: Should we call this for ZGC as well?
+      BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(igvn->_worklist, old);
     }
-#endif
   }
 
 }
