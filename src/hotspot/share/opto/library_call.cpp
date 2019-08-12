@@ -57,10 +57,6 @@
 #include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/macros.hpp"
-#if INCLUDE_SHENANDOAHGC
-#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
-#endif
 
 
 class LibraryIntrinsic : public InlineCallGenerator {
@@ -248,7 +244,7 @@ class LibraryCallKit : public GraphKit {
   Node* generate_min_max(vmIntrinsics::ID id, Node* x, Node* y);
   // This returns Type::AnyPtr, RawPtr, or OopPtr.
   int classify_unsafe_addr(Node* &base, Node* &offset, BasicType type);
-  Node* make_unsafe_address(Node*& base, Node* offset, bool is_store, BasicType type = T_ILLEGAL, bool can_cast = false);
+  Node* make_unsafe_address(Node*& base, Node* offset, BasicType type = T_ILLEGAL, bool can_cast = false);
 
   typedef enum { Relaxed, Opaque, Volatile, Acquire, Release } AccessKind;
   DecoratorSet mo_decorator_for_access_kind(AccessKind kind);
@@ -2179,7 +2175,7 @@ LibraryCallKit::classify_unsafe_addr(Node* &base, Node* &offset, BasicType type)
   }
 }
 
-inline Node* LibraryCallKit::make_unsafe_address(Node*& base, Node* offset, bool is_store, BasicType type, bool can_cast) {
+inline Node* LibraryCallKit::make_unsafe_address(Node*& base, Node* offset, BasicType type, bool can_cast) {
   Node* uncasted_base = base;
   int kind = classify_unsafe_addr(uncasted_base, offset, type);
   if (kind == Type::RawPtr) {
@@ -2374,7 +2370,8 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
          "fieldOffset must be byte-scaled");
   // 32-bit machines ignore the high half!
   offset = ConvL2X(offset);
-  adr = make_unsafe_address(base, offset, is_store, type, kind == Relaxed);
+  adr = make_unsafe_address(base, offset, type, kind == Relaxed);
+
   if (_gvn.type(base)->isa_ptr() != TypePtr::NULL_PTR) {
     heap_base_oop = base;
   } else if (type == T_OBJECT) {
@@ -2657,7 +2654,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   assert(Unsafe_field_offset_to_byte_offset(11) == 11, "fieldOffset must be byte-scaled");
   // 32-bit machines ignore the high half of long offsets
   offset = ConvL2X(offset);
-  Node* adr = make_unsafe_address(base, offset, true, type, false);
+  Node* adr = make_unsafe_address(base, offset, type, false);
   const TypePtr *adr_type = _gvn.type(adr)->isa_ptr();
 
   Compile::AliasType* alias_type = C->alias_type(adr_type);
@@ -4179,8 +4176,8 @@ bool LibraryCallKit::inline_unsafe_copyMemory() {
   assert(Unsafe_field_offset_to_byte_offset(11) == 11,
          "fieldOffset must be byte-scaled");
 
-  Node* src = make_unsafe_address(src_ptr, src_off, false);
-  Node* dst = make_unsafe_address(dst_ptr, dst_off, true);
+  Node* src = make_unsafe_address(src_ptr, src_off);
+  Node* dst = make_unsafe_address(dst_ptr, dst_off);
 
   // Conservatively insert a memory barrier on all memory slices.
   // Do not let writes of the copy source or destination float below the copy.
@@ -5319,8 +5316,8 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   Node* call;
   jvms()->set_should_reexecute(true);
 
-  Node* obja_adr = make_unsafe_address(obja, aoffset, false);
-  Node* objb_adr = make_unsafe_address(objb, boffset, false);
+  Node* obja_adr = make_unsafe_address(obja, aoffset);
+  Node* objb_adr = make_unsafe_address(objb, boffset);
 
   call = make_runtime_call(RC_LEAF,
     OptoRuntime::vectorizedMismatch_Type(),
