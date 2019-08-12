@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/c2/barrierSetC2.hpp"
 #include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
@@ -36,10 +38,6 @@
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "utilities/macros.hpp"
-#if INCLUDE_SHENANDOAHGC
-#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
-#endif
 
 // Portions of code courtesy of Clifford Click
 

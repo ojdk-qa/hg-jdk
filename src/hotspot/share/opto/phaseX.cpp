@@ -39,9 +39,6 @@
 #include "opto/regalloc.hpp"
 #include "opto/rootnode.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_SHENANDOAHGC
-#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
-#endif
 
 //=============================================================================
 #define NODE_HASH_MINIMUM_SIZE    255

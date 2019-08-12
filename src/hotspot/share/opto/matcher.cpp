@@ -44,9 +44,6 @@
 #if INCLUDE_ZGC
 #include "gc/z/zBarrierSetRuntime.hpp"
 #endif // INCLUDE_ZGC
-#if INCLUDE_SHENANDOAHGC
-#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
-#endif
 
 OptoReg::Name OptoReg::c_frame_pointer;
 
