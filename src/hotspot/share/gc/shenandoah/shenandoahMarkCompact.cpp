@@ -176,7 +176,7 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
     BiasedLocking::restore_marks();
     _preserved_marks->reclaim();
 
-    JvmtiExport::gc_epilogue();
+    CodeCache::gc_epilogue();
   }
 
   // Resize metaspace
@@ -187,9 +187,6 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
     delete worker_slices[i];
   }
   FREE_C_HEAP_ARRAY(ShenandoahHeapRegionSet*, worker_slices);
-
-  CodeCache::gc_epilogue();
-  JvmtiExport::gc_epilogue();
 
   heap->set_full_gc_move_in_progress(false);
   heap->set_full_gc_in_progress(false);
