@@ -109,6 +109,7 @@ ifneq ($(call check-jvm-feature, cds), true)
       classListParser.cpp \
       classLoaderExt.cpp \
       filemap.cpp \
+      heapShared.cpp \
       metaspaceShared.cpp \
       metaspaceShared_$(HOTSPOT_TARGET_CPU).cpp \
       metaspaceShared_$(HOTSPOT_TARGET_CPU_ARCH).cpp \
