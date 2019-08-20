@@ -890,6 +890,60 @@ Node* ShenandoahBarrierSetC2::ideal_node(PhaseGVN* phase, Node* n, bool can_resh
       }
     }
   }
+  if (n->Opcode() == Op_CmpP) {
+    Node* in1 = n->in(1);
+    Node* in2 = n->in(2);
+    if (in1->bottom_type() == TypePtr::NULL_PTR) {
+      in2 = step_over_gc_barrier(in2);
+    }
+    if (in2->bottom_type() == TypePtr::NULL_PTR) {
+      in1 = step_over_gc_barrier(in1);
+    }
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+    if (in1 != n->in(1)) {
+      if (igvn != NULL) {
+        n->set_req_X(1, in1, igvn);
+      } else {
+        n->set_req(1, in1);
+      }
+      assert(in2 == n->in(2), "only one change");
+      return n;
+    }
+    if (in2 != n->in(2)) {
+      if (igvn != NULL) {
+        n->set_req_X(2, in2, igvn);
+      } else {
+        n->set_req(2, in2);
+      }
+      return n;
+    }
+  } else if (can_reshape &&
+             n->Opcode() == Op_If &&
+             ShenandoahBarrierC2Support::is_heap_stable_test(n) &&
+             n->in(0) != NULL) {
+    Node* dom = n->in(0);
+    Node* prev_dom = n;
+    int op = n->Opcode();
+    int dist = 16;
+    // Search up the dominator tree for another heap stable test
+    while (dom->Opcode() != op    ||  // Not same opcode?
+           !ShenandoahBarrierC2Support::is_heap_stable_test(dom) ||  // Not same input 1?
+           prev_dom->in(0) != dom) {  // One path of test does not dominate?
+      if (dist < 0) return NULL;
+
+      dist--;
+      prev_dom = dom;
+      dom = IfNode::up_one_dom(dom);
+      if (!dom) return NULL;
+    }
+
+    // Check that we did not follow a loop back to ourselves
+    if (n == dom) {
+      return NULL;
+    }
+
+    return n->as_If()->dominated_by(prev_dom, phase->is_IterGVN());
+  }
   return NULL;
 }
 
