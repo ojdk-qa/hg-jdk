@@ -102,6 +102,7 @@ public:
   void set_resolved_addr(LIR_Opr addr) { _resolved_addr = addr; }
   bool is_oop() const                  { return _type == T_ARRAY || _type == T_OBJECT; }
   DecoratorSet decorators() const      { return _decorators; }
+  void clear_decorators(DecoratorSet ds) { _decorators &= ~ds; }
   bool is_raw() const                  { return (_decorators & AS_RAW) != 0; }
 };
 
