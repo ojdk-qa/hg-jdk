@@ -164,6 +164,8 @@ private:
   ShenandoahThreadRoots                                    _thread_roots;
   ShenandoahJNIHandleRoots                                 _jni_roots;
   ShenandoahClassLoaderDataRoots<true /*single threaded*/> _cld_roots;
+  ShenandoahWeakRoots                                      _weak_roots;
+  ShenandoahStringDedupRoots                               _dedup_roots;
   ShenandoahCodeCacheRoots<ShenandoahAllCodeRootsIterator> _code_roots;
 
 public:

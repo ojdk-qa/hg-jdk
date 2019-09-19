@@ -190,7 +190,8 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
 
  ShenandoahHeapIterationRootScanner::ShenandoahHeapIterationRootScanner() :
    ShenandoahRootProcessor(ShenandoahPhaseTimings::_num_phases),
-   _thread_roots(false /*is par*/) {
+   _thread_roots(false /*is par*/),
+   _weak_roots(1) {
  }
 
  void ShenandoahHeapIterationRootScanner::roots_do(OopClosure* oops) {
@@ -199,6 +200,7 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
    CLDToOopClosure clds(oops, false);
    MarkingCodeBlobClosure code(oops, !CodeBlobToOopClosure::FixRelocations);
    ShenandoahParallelOopsDoThreadClosure tc_cl(oops, &code, NULL);
+   AlwaysTrueClosure always_true;
    ResourceMark rm;
 
    _serial_roots.oops_do(oops, 0);
@@ -206,6 +208,9 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
    _cld_roots.cld_do(&clds, 0);
    _thread_roots.threads_do(&tc_cl, 0);
    _code_roots.code_blobs_do(&code, 0);
+
+   _weak_roots.oops_do<AlwaysTrueClosure, OopClosure>(&always_true, oops, 0);
+   _dedup_roots.oops_do(&always_true, oops, 0);
  }
 
  void ShenandoahHeapIterationRootScanner::strong_roots_do(OopClosure* oops) {
