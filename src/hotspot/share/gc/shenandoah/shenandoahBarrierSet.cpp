@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
+#include "gc/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -244,3 +245,8 @@ void ShenandoahBarrierSet::on_thread_detach(JavaThread* thread) {
     gclab->retire();
   }
 }
+
+void ShenandoahBarrierSet::clone_barrier_runtime(oop src) {
+  clone_barrier(src);
+}
+
