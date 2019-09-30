@@ -43,7 +43,7 @@ public:
   static oopDesc* load_reference_barrier_fixup(oopDesc* src, oop* load_addr);
   static oopDesc* load_reference_barrier_fixup_narrow(oopDesc* src, narrowOop* load_addr);
 
-  static void shenandoah_clone_barrier(oopDesc* src, void* src_ptr, void* dst_ptr, size_t length);
+  static void shenandoah_clone_barrier(oopDesc* src);
 };
 
 #endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHRUNTIME_HPP
