@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2019, Red Hat, Inc. and/or its affiliates.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @requires (os.arch =="x86_64" | os.arch == "amd64") & (vm.bits == "64") & !vm.graal.enabled & vm.gc.Shenandoah
+ * @requires (os.arch =="x86_64" | os.arch == "amd64" | os.arch=="x86" | os.arch=="i386") & !vm.graal.enabled & vm.gc.Shenandoah
  *
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive    -XX:+ShenandoahDegeneratedGC -Xcomp -Xmx512M -XX:+CriticalJNINatives CriticalNativeArgs
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive    -XX:-ShenandoahDegeneratedGC -Xcomp -Xmx512M -XX:+CriticalJNINatives CriticalNativeArgs
