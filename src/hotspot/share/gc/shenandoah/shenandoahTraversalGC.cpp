@@ -399,6 +399,7 @@ void ShenandoahTraversalGC::init_traversal_collection() {
   }
 
   _heap->set_concurrent_traversal_in_progress(true);
+  _heap->set_has_forwarded_objects(true);
 
   bool process_refs = _heap->process_references();
   if (process_refs) {
@@ -611,10 +612,13 @@ void ShenandoahTraversalGC::final_traversal_collection() {
     TASKQUEUE_STATS_ONLY(_task_queues->reset_taskqueue_stats());
 
     // No more marking expected
+    _heap->set_concurrent_traversal_in_progress(false);
     _heap->mark_complete_marking_context();
 
     fixup_roots();
     _heap->parallel_cleaning(false);
+
+    _heap->set_has_forwarded_objects(false);
 
     // Resize metaspace
     MetaspaceGC::compute_new_size();
@@ -668,7 +672,6 @@ void ShenandoahTraversalGC::final_traversal_collection() {
     }
 
     assert(_task_queues->is_empty(), "queues must be empty after traversal GC");
-    _heap->set_concurrent_traversal_in_progress(false);
     assert(!_heap->cancelled_gc(), "must not be cancelled when getting out here");
 
     if (ShenandoahVerify) {
