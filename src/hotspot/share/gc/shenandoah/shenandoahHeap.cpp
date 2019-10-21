@@ -1510,6 +1510,14 @@ void ShenandoahHeap::op_final_mark() {
       make_parsable(true);
     }
 
+    // We are about to select the collection set, make sure it knows about
+    // current pinning status. Also, this allows trashing more regions that
+    // now have their pinning status dropped.
+    {
+      ShenandoahGCPhase phase(ShenandoahPhaseTimings::sync_pinned);
+      sync_pinned_region_status();
+    }
+
     // Trash the collection set left over from previous cycle, if any.
     {
       ShenandoahGCPhase phase(ShenandoahPhaseTimings::trash_cset);
@@ -1744,6 +1752,7 @@ void ShenandoahHeap::op_degenerated(ShenandoahDegenPoint point) {
         // it, we fail degeneration right away and slide into Full GC to recover.
 
         {
+          sync_pinned_region_status();
           collection_set()->clear_current_index();
 
           ShenandoahHeapRegion* r;
@@ -2051,15 +2060,44 @@ void ShenandoahHeap::unregister_nmethod(nmethod* nm) {
 }
 
 oop ShenandoahHeap::pin_object(JavaThread* thr, oop o) {
-  ShenandoahHeapLocker locker(lock());
-  heap_region_containing(o)->make_pinned();
+  heap_region_containing(o)->record_pin();
   return o;
 }
 
 void ShenandoahHeap::unpin_object(JavaThread* thr, oop o) {
-  ShenandoahHeapLocker locker(lock());
-  heap_region_containing(o)->make_unpinned();
+  heap_region_containing(o)->record_unpin();
 }
+
+void ShenandoahHeap::sync_pinned_region_status() {
+  ShenandoahHeapLocker locker(lock());
+
+  for (size_t i = 0; i < num_regions(); i++) {
+    ShenandoahHeapRegion *r = get_region(i);
+    if (r->is_active()) {
+      if (r->is_pinned()) {
+        if (r->pin_count() == 0) {
+          r->make_unpinned();
+        }
+      } else {
+        if (r->pin_count() > 0) {
+          r->make_pinned();
+        }
+      }
+    }
+  }
+
+  assert_pinned_region_status();
+}
+
+#ifdef ASSERT
+void ShenandoahHeap::assert_pinned_region_status() {
+  for (size_t i = 0; i < num_regions(); i++) {
+    ShenandoahHeapRegion* r = get_region(i);
+    assert((r->is_pinned() && r->pin_count() > 0) || (!r->is_pinned() && r->pin_count() == 0),
+           "Region " SIZE_FORMAT " pinning status is inconsistent", i);
+  }
+}
+#endif
 
 GCTimer* ShenandoahHeap::gc_timer() const {
   return _gc_timer;
@@ -2212,6 +2250,13 @@ void ShenandoahHeap::op_final_updaterefs() {
     concurrent_mark()->update_roots(ShenandoahPhaseTimings::degen_gc_update_roots);
   } else {
     concurrent_mark()->update_thread_roots(ShenandoahPhaseTimings::final_update_refs_roots);
+  }
+
+  // Drop unnecessary "pinned" state from regions that does not have CP marks
+  // anymore, as this would allow trashing them below.
+  {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_refs_sync_pinned);
+    sync_pinned_region_status();
   }
 
   {
