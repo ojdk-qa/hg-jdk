@@ -455,8 +455,6 @@ void ShenandoahConcurrentMark::finish_mark_from_roots(bool full_gc) {
   if (_heap->process_references()) {
     weak_refs_work(full_gc);
   }
-
-  _heap->parallel_cleaning(full_gc);
 }
 
 // Weak Reference Closures
