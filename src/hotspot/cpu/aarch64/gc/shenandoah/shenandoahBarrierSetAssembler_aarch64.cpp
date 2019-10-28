@@ -233,9 +233,10 @@ void ShenandoahBarrierSetAssembler::resolve_forward_pointer_not_null(MacroAssemb
   }
 }
 
-void ShenandoahBarrierSetAssembler::load_reference_barrier_not_null(MacroAssembler* masm, Register dst, Register tmp) {
+void ShenandoahBarrierSetAssembler::load_reference_barrier_not_null(MacroAssembler* masm, Register dst, Address load_addr) {
   assert(ShenandoahLoadRefBarrier, "Should be enabled");
   assert(dst != rscratch2, "need rscratch2");
+  assert_different_registers(load_addr.base(), load_addr.index(), rscratch1, rscratch2);
 
   Label done;
   __ enter();
@@ -245,18 +246,23 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_not_null(MacroAssembl
   // Check for heap stability
   __ tbz(rscratch2, ShenandoahHeap::HAS_FORWARDED_BITPOS, done);
 
-  RegSet to_save = RegSet::of(r0);
-  if (dst != r0) {
-    __ push(to_save, sp);
-    __ mov(r0, dst);
+  // use r1 for load address
+  Register result_dst = dst;
+  if (dst == r1) {
+    __ mov(rscratch1, dst);
+    dst = rscratch1;
   }
+
+  // Save r0 and r1, unless it is an output register
+  RegSet to_save = RegSet::of(r0, r1) - result_dst;
+  __ push(to_save, sp);
+  __ lea(r1, load_addr);
+  __ mov(r0, dst);
 
   __ far_call(RuntimeAddress(CAST_FROM_FN_PTR(address, ShenandoahBarrierSetAssembler::shenandoah_lrb())));
 
-  if (dst != r0) {
-    __ mov(dst, r0);
-    __ pop(to_save, sp);
-  }
+  __ mov(result_dst, r0);
+  __ pop(to_save, sp);
 
   __ bind(done);
   __ leave();
@@ -277,37 +283,56 @@ void ShenandoahBarrierSetAssembler::storeval_barrier(MacroAssembler* masm, Regis
   }
 }
 
-void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm, Register dst, Register tmp) {
+void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm, Register dst, Address load_addr) {
   if (ShenandoahLoadRefBarrier) {
     Label is_null;
     __ cbz(dst, is_null);
-    load_reference_barrier_not_null(masm, dst, tmp);
+    load_reference_barrier_not_null(masm, dst, load_addr);
     __ bind(is_null);
   }
 }
 
 void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                             Register dst, Address src, Register tmp1, Register tmp_thread) {
-  bool on_oop = type == T_OBJECT || type == T_ARRAY;
-  bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
-  bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
-  bool on_reference = on_weak || on_phantom;
+  // 1: non-reference load, no additional barrier is needed
+  if (!is_reference_type(type)) {
+    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+    return;
+  }
 
-  BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
-  if (on_oop) {
-    load_reference_barrier(masm, dst, tmp1);
+  // 2: load a reference from src location and apply LRB if needed
+  if (ShenandoahBarrierSet::need_load_reference_barrier(decorators, type)) {
+    Register result_dst = dst;
 
-    if (ShenandoahKeepAliveBarrier && on_reference) {
-      __ enter();
-      satb_write_barrier_pre(masm /* masm */,
-                             noreg /* obj */,
-                             dst /* pre_val */,
-                             rthread /* thread */,
-                             tmp1 /* tmp */,
-                             true /* tosca_live */,
-                             true /* expand_call */);
-      __ leave();
+    // Preserve src location for LRB
+    if (dst == src.base() || dst == src.index()) {
+      dst = rscratch1;
     }
+    assert_different_registers(dst, src.base(), src.index());
+
+    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+
+    load_reference_barrier(masm, dst, src);
+
+    if (dst != result_dst) {
+      __ mov(result_dst, dst);
+      dst = result_dst;
+    }
+  } else {
+    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+  }
+
+  // 3: apply keep-alive barrier if needed
+  if (ShenandoahBarrierSet::need_keep_alive_barrier(decorators, type)) {
+    __ enter();
+    satb_write_barrier_pre(masm /* masm */,
+                           noreg /* obj */,
+                           dst /* pre_val */,
+                           rthread /* thread */,
+                           tmp1 /* tmp */,
+                           true /* tosca_live */,
+                           true /* expand_call */);
+    __ leave();
   }
 }
 
@@ -559,9 +584,9 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
   __ load_parameter(0, r0);
   __ load_parameter(1, r1);
   if (UseCompressedOops) {
-    __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_fixup_narrow));
+    __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow));
   } else {
-    __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_fixup));
+    __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier));
   }
   __ blr(lr);
   __ mov(rscratch1, r0);
@@ -586,6 +611,7 @@ address ShenandoahBarrierSetAssembler::shenandoah_lrb() {
 //
 // Input:
 //   r0: OOP to evacuate.  Not null.
+//   r1: load address
 //
 // Output:
 //   r0: Pointer to evacuated OOP.
@@ -621,7 +647,11 @@ address ShenandoahBarrierSetAssembler::generate_shenandoah_lrb(StubCodeGenerator
 
   __ push_call_clobbered_registers();
 
-  __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier));
+  if (UseCompressedOops) {
+    __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow));
+  } else {
+    __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier));
+  }
   __ blr(lr);
   __ mov(rscratch1, r0);
   __ pop_call_clobbered_registers();

@@ -57,6 +57,9 @@ public:
     return _satb_mark_queue_set;
   }
 
+  static bool need_load_reference_barrier(DecoratorSet decorators, BasicType type);
+  static bool need_keep_alive_barrier(DecoratorSet decorators, BasicType type);
+
   void print_on(outputStream* st) const;
 
   bool is_a(BarrierSet::Name bsn);

@@ -100,6 +100,24 @@ void ShenandoahBarrierSet::write_ref_field_work(void* v, oop o, bool release) {
   shenandoah_assert_not_in_cset_except    (v, o, o == NULL || _heap->cancelled_gc() || !_heap->is_concurrent_mark_in_progress());
 }
 
+bool ShenandoahBarrierSet::need_load_reference_barrier(DecoratorSet decorators, BasicType type) {
+  if (!ShenandoahLoadRefBarrier) return false;
+  // Only needed for references
+  return is_reference_type(type);
+}
+
+bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators,BasicType type) {
+  if (!ShenandoahKeepAliveBarrier) return false;
+  // Only needed for references
+  if (!is_reference_type(type)) return false;
+
+  bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0;
+  bool unknown = (decorators & ON_UNKNOWN_OOP_REF) != 0;
+  bool is_traversal_mode = ShenandoahHeap::heap()->is_traversal_mode();
+  bool on_weak_ref = (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) != 0;
+  return (on_weak_ref || unknown) && (keep_alive || is_traversal_mode);
+}
+
 oop ShenandoahBarrierSet::load_reference_barrier_not_null(oop obj) {
   if (ShenandoahLoadRefBarrier && _heap->has_forwarded_objects()) {
     return load_reference_barrier_impl(obj);
