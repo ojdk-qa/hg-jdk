@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1115,6 +1115,7 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   MergeMemNode* merge_mem = NULL;
 
   if (ac->is_clonebasic()) {
+    if (UseShenandoahGC) { // TODO: Move to SBSC2::clone_at_expansion
     assert (src_offset == NULL && dest_offset == NULL, "for clone offsets should be null");
     Node* mem = ac->in(TypeFunc::Memory);
     const char* copyfunc_name = "arraycopy";
@@ -1156,6 +1157,10 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
 #endif
 
     _igvn.replace_node(ac, call);
+    } else {
+      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+      bs->clone_at_expansion(this, ac);
+    }
     return;
   } else if (ac->is_copyof() || ac->is_copyofrange() || ac->is_cloneoop()) {
     Node* mem = ac->in(TypeFunc::Memory);
@@ -1174,6 +1179,9 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     const TypePtr* adr_type = _igvn.type(dest)->is_oopptr()->add_offset(Type::OffsetBot);
     if (ac->_dest_type != TypeOopPtr::BOTTOM) {
       adr_type = ac->_dest_type->add_offset(Type::OffsetBot)->is_ptr();
+    }
+    if (ac->_src_type != ac->_dest_type) {
+      adr_type = TypeRawPtr::BOTTOM;
     }
     generate_arraycopy(ac, alloc, &ctrl, merge_mem, &io,
                        adr_type, T_OBJECT,

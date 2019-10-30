@@ -880,15 +880,12 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
 
 static inline Node* isa_java_mirror_load(PhaseGVN* phase, Node* n) {
   // Return the klass node for (indirect load from OopHandle)
-  //   LoadP(LoadP(AddP(foo:Klass, #java_mirror)))
+  //   LoadBarrier?(LoadP(LoadP(AddP(foo:Klass, #java_mirror))))
   //   or NULL if not matching.
-
-#if INCLUDE_SHENANDOAHGC
-  if (UseShenandoahGC) {
-    BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  if (bs->is_gc_barrier_node(n)) {
     n = bs->step_over_gc_barrier(n);
   }
-#endif
 
   if (n->Opcode() != Op_LoadP) return NULL;
 

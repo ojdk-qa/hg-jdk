@@ -93,6 +93,12 @@ TRACE_REQUEST_FUNC(OSInformation) {
   event.commit();
 }
 
+TRACE_REQUEST_FUNC(VirtualizationInformation) {
+  EventVirtualizationInformation event;
+  event.set_name(JfrOSInterface::virtualization_name());
+  event.commit();
+}
+
 TRACE_REQUEST_FUNC(ModuleRequire) {
   JfrModuleEvent::generate_module_dependency_events();
 }

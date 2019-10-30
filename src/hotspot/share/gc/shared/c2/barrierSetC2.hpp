@@ -190,13 +190,15 @@ public:
 
   virtual void clone(GraphKit* kit, Node* src, Node* dst, Node* size, bool is_array) const;
 
-  virtual Node* ideal_node(PhaseGVN *phase, Node* n, bool can_reshape) const { return NULL; }
+  virtual Node* ideal_node(PhaseGVN* phase, Node* n, bool can_reshape) const { return NULL; }
   virtual Node* identity_node(PhaseGVN* phase, Node* n) const { return n; }
 
   // These are general helper methods used by C2
   virtual bool array_copy_requires_gc_barriers(BasicType type) const { return false; }
+  virtual void clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const;
 
   // Support for GC barriers emitted during parsing
+  virtual bool has_load_barriers() const { return false; }
   virtual bool is_gc_barrier_node(Node* node) const { return false; }
   virtual Node* step_over_gc_barrier(Node* c) const { return c; }
 
@@ -204,7 +206,7 @@ public:
   virtual void register_potential_barrier_node(Node* node) const { }
   virtual void unregister_potential_barrier_node(Node* node) const { }
   virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const { }
-  virtual void enqueue_useful_gc_barrier(PhaseIterGVN* igvn, Node* node) const {}
+  virtual void enqueue_useful_gc_barrier(Unique_Node_List &worklist, Node* node) const {}
   virtual void eliminate_useless_gc_barriers(Unique_Node_List &useful) const {}
   virtual void add_users_to_worklist(Unique_Node_List* worklist) const {}
 
