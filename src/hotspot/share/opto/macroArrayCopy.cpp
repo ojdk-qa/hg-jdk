@@ -1087,23 +1087,6 @@ void PhaseMacroExpand::generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** 
   finish_arraycopy_call(call, ctrl, mem, adr_type);
 }
 
-#if INCLUDE_SHENANDOAHGC
-Node* PhaseMacroExpand::shenandoah_call_clone_barrier(Node* call, Node* dest) {
-  assert (UseShenandoahGC && ShenandoahCloneBarrier, "Should be enabled");
-  const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
-  Node* c = new ProjNode(call,TypeFunc::Control);
-  transform_later(c);
-  Node* m = new ProjNode(call, TypeFunc::Memory);
-  transform_later(m);
-  assert(dest->is_AddP(), "bad input");
-  call = make_leaf_call(c, m, ShenandoahBarrierSetC2::shenandoah_clone_barrier_Type(),
-                        CAST_FROM_FN_PTR(address, ShenandoahRuntime::shenandoah_clone_barrier),
-                        "shenandoah_clone_barrier", raw_adr_type, dest->in(AddPNode::Base));
-  transform_later(call);
-  return call;
-}
-#endif
-
 void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   Node* ctrl = ac->in(TypeFunc::Control);
   Node* io = ac->in(TypeFunc::I_O);
@@ -1115,52 +1098,8 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   MergeMemNode* merge_mem = NULL;
 
   if (ac->is_clonebasic()) {
-    if (UseShenandoahGC) { // TODO: Move to SBSC2::clone_at_expansion
-    assert (src_offset == NULL && dest_offset == NULL, "for clone offsets should be null");
-    Node* mem = ac->in(TypeFunc::Memory);
-    const char* copyfunc_name = "arraycopy";
-    address     copyfunc_addr =
-      basictype2arraycopy(T_LONG, NULL, NULL,
-                          true, copyfunc_name, true);
-
-    const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
-    const TypeFunc* call_type = OptoRuntime::fast_arraycopy_Type();
-
-    Node* call = make_leaf_call(ctrl, mem, call_type, copyfunc_addr, copyfunc_name, raw_adr_type, src, dest, length XTOP);
-    transform_later(call);
-
-#if INCLUDE_SHENANDOAHGC
-    if (UseShenandoahGC && ShenandoahCloneBarrier) {
-      const TypeOopPtr* src_type = _igvn.type(src)->is_oopptr();
-      if (src_type->isa_instptr() != NULL) {
-        ciInstanceKlass* ik = src_type->klass()->as_instance_klass();
-        if ((src_type->klass_is_exact() || (!ik->is_interface() && !ik->has_subklass())) && !ik->has_injected_fields()) {
-          if (ik->has_object_fields()) {
-            call = shenandoah_call_clone_barrier(call, dest);
-          } else {
-            if (!src_type->klass_is_exact()) {
-              C->dependencies()->assert_leaf_type(ik);
-            }
-          }
-        } else {
-          call = shenandoah_call_clone_barrier(call, dest);
-        }
-      } else if (src_type->isa_aryptr()) {
-        BasicType src_elem  = src_type->klass()->as_array_klass()->element_type()->basic_type();
-        if (src_elem == T_OBJECT || src_elem == T_ARRAY) {
-          call = shenandoah_call_clone_barrier(call, dest);
-        }
-      } else {
-        call = shenandoah_call_clone_barrier(call, dest);
-      }
-    }
-#endif
-
-    _igvn.replace_node(ac, call);
-    } else {
-      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      bs->clone_at_expansion(this, ac);
-    }
+    BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+    bs->clone_at_expansion(this, ac);
     return;
   } else if (ac->is_copyof() || ac->is_copyofrange() || ac->is_cloneoop()) {
     Node* mem = ac->in(TypeFunc::Memory);

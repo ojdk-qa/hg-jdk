@@ -38,6 +38,7 @@
 #include "opto/movenode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
 
 ShenandoahBarrierSetC2* ShenandoahBarrierSetC2::bsc2() {
   return reinterpret_cast<ShenandoahBarrierSetC2*>(BarrierSet::barrier_set()->barrier_set_c2());
@@ -777,6 +778,51 @@ bool ShenandoahBarrierSetC2::clone_needs_postbarrier(ArrayCopyNode *ac, PhaseIte
     return true;
   }
   return false;
+}
+
+static Node* shenandoah_call_clone_barrier(PhaseMacroExpand* phase, Node* call, Node* dest) {
+  assert (UseShenandoahGC && ShenandoahCloneBarrier, "Should be enabled");
+  const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
+  Node* c = new ProjNode(call,TypeFunc::Control);
+  phase->transform_later(c);
+  Node* m = new ProjNode(call, TypeFunc::Memory);
+  phase->transform_later(m);
+  assert(dest->is_AddP(), "bad input");
+  call = phase->make_leaf_call(c, m, ShenandoahBarrierSetC2::shenandoah_clone_barrier_Type(),
+			       CAST_FROM_FN_PTR(address, ShenandoahRuntime::shenandoah_clone_barrier),
+			       "shenandoah_clone_barrier", raw_adr_type, dest->in(AddPNode::Base));
+  phase->transform_later(call);
+  return call;
+}
+
+#define XTOP LP64_ONLY(COMMA phase->top())
+
+void ShenandoahBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
+  Node* ctrl = ac->in(TypeFunc::Control);
+  Node* mem = ac->in(TypeFunc::Memory);
+  Node* src = ac->in(ArrayCopyNode::Src);
+  Node* src_offset = ac->in(ArrayCopyNode::SrcPos);
+  Node* dest = ac->in(ArrayCopyNode::Dest);
+  Node* dest_offset = ac->in(ArrayCopyNode::DestPos);
+  Node* length = ac->in(ArrayCopyNode::Length);
+
+  assert (src_offset == NULL && dest_offset == NULL, "for clone offsets should be null");
+  const char* copyfunc_name = "arraycopy";
+  address     copyfunc_addr =
+    phase->basictype2arraycopy(T_LONG, NULL, NULL,
+			       true, copyfunc_name, true);
+
+  const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
+  const TypeFunc* call_type = OptoRuntime::fast_arraycopy_Type();
+
+  Node* call = phase->make_leaf_call(ctrl, mem, call_type, copyfunc_addr, copyfunc_name, raw_adr_type, src, dest, length XTOP);
+  phase->transform_later(call);
+
+  if (ShenandoahCloneBarrier && clone_needs_postbarrier(ac, phase->igvn())) {
+    call = shenandoah_call_clone_barrier(phase, call, dest);
+  }
+
+  phase->igvn().replace_node(ac, call);
 }
 
 // Support for macro expanded GC barriers
