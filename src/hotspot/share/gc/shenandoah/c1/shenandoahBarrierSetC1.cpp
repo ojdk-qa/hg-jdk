@@ -236,22 +236,25 @@ LIR_Opr ShenandoahBarrierSetC1::resolve_address(LIRAccess& access, bool resolve_
 }
 
 void ShenandoahBarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result) {
+  // 1: non-reference load, no additional barrier is needed
   if (!access.is_oop()) {
     BarrierSetC1::load_at_resolved(access, result);
     return;
   }
 
-  LIRGenerator *gen = access.gen();
+  LIRGenerator* gen = access.gen();
 
+  // 2: load a reference from src location and apply LRB if ShenandoahLoadRefBarrier is set
   if (ShenandoahLoadRefBarrier) {
     LIR_Opr tmp = gen->new_register(T_OBJECT);
     BarrierSetC1::load_at_resolved(access, tmp);
-    tmp = load_reference_barrier(access.gen(), tmp, access.resolved_addr());
+    tmp = load_reference_barrier(gen, tmp, access.resolved_addr());
     __ move(tmp, result);
   } else {
     BarrierSetC1::load_at_resolved(access, result);
   }
 
+  // 3: apply keep-alive barrier if ShenandoahKeepAliveBarrier is set
   if (ShenandoahKeepAliveBarrier) {
     DecoratorSet decorators = access.decorators();
     bool is_weak = (decorators & ON_WEAK_OOP_REF) != 0;
@@ -264,13 +267,13 @@ void ShenandoahBarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result)
         Lcont_anonymous = new LabelObj();
         generate_referent_check(access, Lcont_anonymous);
       }
-      pre_barrier(access.gen(), access.access_emit_info(), access.decorators(), LIR_OprFact::illegalOpr /* addr_opr */,
+      pre_barrier(gen, access.access_emit_info(), decorators, LIR_OprFact::illegalOpr /* addr_opr */,
                   result /* pre_val */);
       if (is_anonymous) {
         __ branch_destination(Lcont_anonymous->label());
       }
     }
-  }
+ }
 }
 
 class C1ShenandoahPreBarrierCodeGenClosure : public StubAssemblerCodeGenClosure {

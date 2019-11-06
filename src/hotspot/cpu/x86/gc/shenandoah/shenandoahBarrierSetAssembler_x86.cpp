@@ -361,6 +361,19 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   }
 }
 
+//
+// Arguments:
+//
+// Inputs:
+//   src:        oop location, might be clobbered
+//   tmp1:       scratch register, might not be valid.
+//
+// Output:
+//   dst:        oop loaded from src location
+//
+// Kill:
+//   tmp1 (if it is valid)
+//
 void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
              Register dst, Address src, Register tmp1, Register tmp_thread) {
   // 1: non-reference load, no additional barrier is needed
