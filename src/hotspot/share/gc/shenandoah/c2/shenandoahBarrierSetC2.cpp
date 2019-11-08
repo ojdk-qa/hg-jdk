@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
+#include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
@@ -526,15 +527,16 @@ Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val
 
   Node* load = BarrierSetC2::load_at_resolved(access, val_type);
   DecoratorSet decorators = access.decorators();
+  BasicType type = access.type();
 
-  // 2: apply LRB if ShenandoahLoadRefBarrier is set
-  if (ShenandoahLoadRefBarrier) {
+  // 2: apply LRB if needed
+  if (ShenandoahBarrierSet::need_load_reference_barrier(decorators, type)) {
     load = new ShenandoahLoadReferenceBarrierNode(NULL, load);
     load = access.kit()->gvn().transform(load);
   }
 
-  // 3: apply keep-alive barrier if ShenandoahKeepAliveBarrier is set
-  if (ShenandoahKeepAliveBarrier) {
+  // 3: apply keep-alive barrier if needed
+  if (ShenandoahBarrierSet::need_keep_alive_barrier(decorators, type)) {
     Node* top = Compile::current()->top();
     Node* adr = access.addr().node();
     Node* offset = adr->is_AddP() ? adr->in(AddPNode::Offset) : top;

@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "c1/c1_IR.hpp"
+#include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
@@ -243,9 +244,11 @@ void ShenandoahBarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result)
   }
 
   LIRGenerator* gen = access.gen();
+  DecoratorSet decorators = access.decorators();
+  BasicType type = access.type();
 
   // 2: load a reference from src location and apply LRB if ShenandoahLoadRefBarrier is set
-  if (ShenandoahLoadRefBarrier) {
+  if (ShenandoahBarrierSet::need_load_reference_barrier(decorators, type)) {
     LIR_Opr tmp = gen->new_register(T_OBJECT);
     BarrierSetC1::load_at_resolved(access, tmp);
     tmp = load_reference_barrier(gen, tmp, access.resolved_addr());

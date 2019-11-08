@@ -70,24 +70,6 @@ bool ShenandoahBarrierSet::is_aligned(HeapWord* hw) {
   return true;
 }
 
-bool ShenandoahBarrierSet::need_load_reference_barrier(DecoratorSet decorators, BasicType type) {
-  if (!ShenandoahLoadRefBarrier) return false;
-  // Only needed for references
-  return is_reference_type(type);
-}
-
-bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators,BasicType type) {
-  if (!ShenandoahKeepAliveBarrier) return false;
-  // Only needed for references
-  if (!is_reference_type(type)) return false;
-
-  bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0;
-  bool unknown = (decorators & ON_UNKNOWN_OOP_REF) != 0;
-  bool is_traversal_mode = ShenandoahHeap::heap()->is_traversal_mode();
-  bool on_weak_ref = (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) != 0;
-  return (on_weak_ref || unknown) && (keep_alive || is_traversal_mode);
-}
-
 oop ShenandoahBarrierSet::load_reference_barrier_not_null(oop obj) {
   if (ShenandoahLoadRefBarrier && _heap->has_forwarded_objects()) {
     return load_reference_barrier_impl(obj);
@@ -110,6 +92,24 @@ oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj, oop* load_addr
 
 oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj, narrowOop* load_addr) {
   return load_reference_barrier_mutator_work(obj, load_addr);
+}
+
+bool ShenandoahBarrierSet::need_load_reference_barrier(DecoratorSet decorators, BasicType type) {
+  if (!ShenandoahLoadRefBarrier) return false;
+  // Only needed for references
+  return is_reference_type(type);
+}
+
+bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators,BasicType type) {
+  if (!ShenandoahKeepAliveBarrier) return false;
+  // Only needed for references
+  if (!is_reference_type(type)) return false;
+
+  bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0;
+  bool unknown = (decorators & ON_UNKNOWN_OOP_REF) != 0;
+  bool is_traversal_mode = ShenandoahHeap::heap()->is_traversal_mode();
+  bool on_weak_ref = (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) != 0;
+  return (on_weak_ref || unknown) && (keep_alive || is_traversal_mode);
 }
 
 template <class T>
