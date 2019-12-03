@@ -27,7 +27,6 @@
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "gc/shared/c2/cardTableBarrierSetC2.hpp"
 #include "opto/arraycopynode.hpp"
-#include "opto/castnode.hpp"
 #include "opto/graphKit.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
@@ -153,7 +152,7 @@ int ArrayCopyNode::get_count(PhaseGVN *phase) const {
 }
 
 #if INCLUDE_SHENANDOAHGC
-Node* ArrayCopyNode::shenandoah_add_storeval_barrier(PhaseGVN *phase, bool can_reshape, Node* v, MergeMemNode* mem, Node*& ctl) {
+Node* ArrayCopyNode::shenandoah_add_storeval_barrier(PhaseGVN *phase, Node* v) {
   if (ShenandoahLoadRefBarrier) {
     return phase->transform(new ShenandoahLoadReferenceBarrierNode(NULL, v));
   }
@@ -223,7 +222,7 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
     v = phase->transform(v);
 #if INCLUDE_SHENANDOAHGC
     if (UseShenandoahGC && bt == T_OBJECT) {
-      v = shenandoah_add_storeval_barrier(phase, can_reshape, v, mem, ctl);
+      v = shenandoah_add_storeval_barrier(phase, v);
     }
 #endif
     Node* s = StoreNode::make(*phase, ctl, mem->memory_at(fieldidx), next_dest, adr_type, v, bt, MemNode::unordered);
@@ -371,8 +370,9 @@ void ArrayCopyNode::array_copy_test_overlap(PhaseGVN *phase, bool can_reshape, b
 
 Node* ArrayCopyNode::array_copy_forward(PhaseGVN *phase,
                                         bool can_reshape,
-                                        Node*& forward_ctl,
-                                        MergeMemNode* mm,
+                                        Node* forward_ctl,
+                                        Node* start_mem_src,
+                                        Node* start_mem_dest,
                                         const TypePtr* atp_src,
                                         const TypePtr* atp_dest,
                                         Node* adr_src,
@@ -382,14 +382,12 @@ Node* ArrayCopyNode::array_copy_forward(PhaseGVN *phase,
                                         BasicType copy_type,
                                         const Type* value_type,
                                         int count) {
+  Node* mem = phase->C->top();
   if (!forward_ctl->is_top()) {
     // copy forward
-    mm = mm->clone()->as_MergeMem();
+    mem = start_mem_dest;
     uint alias_idx_src = phase->C->get_alias_index(atp_src);
     uint alias_idx_dest = phase->C->get_alias_index(atp_dest);
-    Node *start_mem_src = mm->memory_at(alias_idx_src);
-    Node *start_mem_dest = mm->memory_at(alias_idx_dest);
-    Node* mem = start_mem_dest;
     bool same_alias = (alias_idx_src == alias_idx_dest);
 
     if (count > 0) {
@@ -397,7 +395,7 @@ Node* ArrayCopyNode::array_copy_forward(PhaseGVN *phase,
       v = phase->transform(v);
 #if INCLUDE_SHENANDOAHGC
       if (UseShenandoahGC && copy_type == T_OBJECT) {
-        v = shenandoah_add_storeval_barrier(phase, can_reshape, v, mm, forward_ctl);
+        v = shenandoah_add_storeval_barrier(phase, v);
       }
 #endif
       mem = StoreNode::make(*phase, forward_ctl, mem, adr_dest, atp_dest, v, copy_type, MemNode::unordered);
@@ -410,27 +408,26 @@ Node* ArrayCopyNode::array_copy_forward(PhaseGVN *phase,
         v = phase->transform(v);
 #if INCLUDE_SHENANDOAHGC
         if (UseShenandoahGC && copy_type == T_OBJECT) {
-          v = shenandoah_add_storeval_barrier(phase, can_reshape, v, mm, forward_ctl);
+          v = shenandoah_add_storeval_barrier(phase, v);
         }
 #endif
         mem = StoreNode::make(*phase, forward_ctl,mem,next_dest,atp_dest,v, copy_type, MemNode::unordered);
         mem = phase->transform(mem);
       }
-      mm->set_memory_at(alias_idx_dest, mem);
     } else if(can_reshape) {
       PhaseIterGVN* igvn = phase->is_IterGVN();
       igvn->_worklist.push(adr_src);
       igvn->_worklist.push(adr_dest);
     }
-    return mm;
   }
-  return phase->C->top();
+  return mem;
 }
 
 Node* ArrayCopyNode::array_copy_backward(PhaseGVN *phase,
                                          bool can_reshape,
-                                         Node*& backward_ctl,
-                                         MergeMemNode* mm,
+                                         Node* backward_ctl,
+                                         Node* start_mem_src,
+                                         Node* start_mem_dest,
                                          const TypePtr* atp_src,
                                          const TypePtr* atp_dest,
                                          Node* adr_src,
@@ -440,16 +437,12 @@ Node* ArrayCopyNode::array_copy_backward(PhaseGVN *phase,
                                          BasicType copy_type,
                                          const Type* value_type,
                                          int count) {
+  Node* mem = phase->C->top();
   if (!backward_ctl->is_top()) {
     // copy backward
-    mm = mm->clone()->as_MergeMem();
+    mem = start_mem_dest;
     uint alias_idx_src = phase->C->get_alias_index(atp_src);
     uint alias_idx_dest = phase->C->get_alias_index(atp_dest);
-    Node *start_mem_src = mm->memory_at(alias_idx_src);
-    Node *start_mem_dest = mm->memory_at(alias_idx_dest);
-    Node* mem = start_mem_dest;
-
-    assert(copy_type != T_OBJECT SHENANDOAHGC_ONLY(|| ShenandoahStoreValEnqueueBarrier), "only tightly coupled allocations for object arrays");
     bool same_alias = (alias_idx_src == alias_idx_dest);
 
     if (count > 0) {
@@ -461,7 +454,7 @@ Node* ArrayCopyNode::array_copy_backward(PhaseGVN *phase,
         v = phase->transform(v);
 #if INCLUDE_SHENANDOAHGC
         if (UseShenandoahGC && copy_type == T_OBJECT) {
-          v = shenandoah_add_storeval_barrier(phase, can_reshape, v, mm, backward_ctl);
+          v = shenandoah_add_storeval_barrier(phase, v);
         }
 #endif
         mem = StoreNode::make(*phase, backward_ctl,mem,next_dest,atp_dest,v, copy_type, MemNode::unordered);
@@ -471,20 +464,18 @@ Node* ArrayCopyNode::array_copy_backward(PhaseGVN *phase,
       v = phase->transform(v);
 #if INCLUDE_SHENANDOAHGC
       if (UseShenandoahGC && copy_type == T_OBJECT) {
-        v = shenandoah_add_storeval_barrier(phase, can_reshape, v, mm, backward_ctl);
+        v = shenandoah_add_storeval_barrier(phase, v);
       }
 #endif
       mem = StoreNode::make(*phase, backward_ctl, mem, adr_dest, atp_dest, v, copy_type, MemNode::unordered);
       mem = phase->transform(mem);
-      mm->set_memory_at(alias_idx_dest, mem);
     } else if(can_reshape) {
       PhaseIterGVN* igvn = phase->is_IterGVN();
       igvn->_worklist.push(adr_src);
       igvn->_worklist.push(adr_dest);
     }
-    return phase->transform(mm);
   }
-  return phase->C->top();
+  return mem;
 }
 
 bool ArrayCopyNode::finish_transform(PhaseGVN *phase, bool can_reshape,
@@ -609,10 +600,15 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* dest = in(ArrayCopyNode::Dest);
   const TypePtr* atp_src = get_address_type(phase, src);
   const TypePtr* atp_dest = get_address_type(phase, dest);
+  uint alias_idx_src = phase->C->get_alias_index(atp_src);
+  uint alias_idx_dest = phase->C->get_alias_index(atp_dest);
 
   Node *in_mem = in(TypeFunc::Memory);
-  if (!in_mem->is_MergeMem()) {
-    in_mem = MergeMemNode::make(in_mem);
+  Node *start_mem_src = in_mem;
+  Node *start_mem_dest = in_mem;
+  if (in_mem->is_MergeMem()) {
+    start_mem_src = in_mem->as_MergeMem()->memory_at(alias_idx_src);
+    start_mem_dest = in_mem->as_MergeMem()->memory_at(alias_idx_dest);
   }
 
 
@@ -626,13 +622,13 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   array_copy_test_overlap(phase, can_reshape, disjoint_bases, count, forward_ctl, backward_ctl);
 
   Node* forward_mem = array_copy_forward(phase, can_reshape, forward_ctl,
-                                         in_mem->as_MergeMem(),
+                                         start_mem_src, start_mem_dest,
                                          atp_src, atp_dest,
                                          adr_src, base_src, adr_dest, base_dest,
                                          copy_type, value_type, count);
 
   Node* backward_mem = array_copy_backward(phase, can_reshape, backward_ctl,
-                                           in_mem->as_MergeMem(),
+                                           start_mem_src, start_mem_dest,
                                            atp_src, atp_dest,
                                            adr_src, base_src, adr_dest, base_dest,
                                            copy_type, value_type, count);
@@ -640,21 +636,13 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* ctl = NULL;
   if (!forward_ctl->is_top() && !backward_ctl->is_top()) {
     ctl = new RegionNode(3);
+    mem = new PhiNode(ctl, Type::MEMORY, atp_dest);
     ctl->init_req(1, forward_ctl);
+    mem->init_req(1, forward_mem);
     ctl->init_req(2, backward_ctl);
+    mem->init_req(2, backward_mem);
     ctl = phase->transform(ctl);
-    MergeMemNode* forward_mm = forward_mem->as_MergeMem();
-    MergeMemNode* backward_mm = backward_mem->as_MergeMem();
-    for (MergeMemStream mms(forward_mm, backward_mm); mms.next_non_empty2(); ) {
-      if (mms.memory() != mms.memory2()) {
-        Node* phi = new PhiNode(ctl, Type::MEMORY, phase->C->get_adr_type(mms.alias_idx()));
-        phi->init_req(1, mms.memory());
-        phi->init_req(2, mms.memory2());
-        phi = phase->transform(phi);
-        mms.set_memory(phi);
-      }
-    }
-    mem = forward_mem;
+    mem = phase->transform(mem);
   } else if (!forward_ctl->is_top()) {
     ctl = forward_ctl;
     mem = forward_mem;
@@ -668,6 +656,10 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     assert(phase->is_IterGVN()->delay_transform(), "should be delaying transforms");
     phase->is_IterGVN()->set_delay_transform(false);
   }
+
+  MergeMemNode* out_mem = MergeMemNode::make(in_mem);
+  out_mem->set_memory_at(alias_idx_dest, mem);
+  mem = out_mem;
 
   if (!finish_transform(phase, can_reshape, ctl, mem)) {
     return NULL;

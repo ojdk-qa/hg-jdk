@@ -958,15 +958,8 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseGVN* phase) const {
     if (ac->as_ArrayCopy()->is_clonebasic()) {
       assert(ld_alloc != NULL, "need an alloc");
       assert(addp->is_AddP(), "address must be addp");
-      assert(ac->in(ArrayCopyNode::Dest)->is_AddP(), "dest must be an address");
-#if INCLUDE_SHENANDOAHGC
-      if (UseShenandoahGC) {
-        assert(((ShenandoahBarrierSetC2*)BarrierSet::barrier_set()->barrier_set_c2())->step_over_gc_barrier(addp->in(AddPNode::Base)) ==
-               ((ShenandoahBarrierSetC2*)BarrierSet::barrier_set()->barrier_set_c2())->step_over_gc_barrier(ac->in(ArrayCopyNode::Dest)->in(AddPNode::Base)), "strange pattern");
-        assert(((ShenandoahBarrierSetC2*)BarrierSet::barrier_set()->barrier_set_c2())->step_over_gc_barrier(addp->in(AddPNode::Address)) ==
-               ((ShenandoahBarrierSetC2*)BarrierSet::barrier_set()->barrier_set_c2())->step_over_gc_barrier(ac->in(ArrayCopyNode::Dest)->in(AddPNode::Address)), "strange pattern");
-      }
-#endif
+      assert(addp->in(AddPNode::Base) == ac->in(ArrayCopyNode::Dest)->in(AddPNode::Base), "strange pattern");
+      assert(addp->in(AddPNode::Address) == ac->in(ArrayCopyNode::Dest)->in(AddPNode::Address), "strange pattern");
       addp->set_req(AddPNode::Base, src->in(AddPNode::Base));
       addp->set_req(AddPNode::Address, src->in(AddPNode::Address));
     } else {

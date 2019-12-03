@@ -3367,9 +3367,7 @@ bool LibraryCallKit::inline_native_subtype_check() {
 
   RegionNode* region = new RegionNode(PATH_LIMIT);
   Node*       phi    = new PhiNode(region, TypeInt::BOOL);
-  Node*       mem_phi= new PhiNode(region, Type::MEMORY, TypePtr::BOTTOM);
   record_for_igvn(region);
-  Node* init_mem = map()->memory();
 
   const TypePtr* adr_type = TypeRawPtr::BOTTOM;   // memory type of loads
   const TypeKlassPtr* kls_type = TypeKlassPtr::OBJECT_OR_NULL;
@@ -3432,24 +3430,18 @@ bool LibraryCallKit::inline_native_subtype_check() {
 
   // pull together the cases:
   assert(region->req() == PATH_LIMIT, "sane region");
-  Node* cur_mem = reset_memory();
   for (uint i = 1; i < region->req(); i++) {
     Node* ctl = region->in(i);
     if (ctl == NULL || ctl == top()) {
       region->set_req(i, top());
       phi   ->set_req(i, top());
-      mem_phi->set_req(i, top());
-    } else {
-      if (phi->in(i) == NULL) {
-        phi->set_req(i, intcon(0)); // all other paths produce 'false'
-      }
-      mem_phi->set_req(i, (i == _prim_0_path || i == _prim_same_path) ?  cur_mem : init_mem);
+    } else if (phi->in(i) == NULL) {
+      phi->set_req(i, intcon(0)); // all other paths produce 'false'
     }
   }
 
   set_control(_gvn.transform(region));
   set_result(_gvn.transform(phi));
-  set_all_memory(_gvn.transform(mem_phi));
   return true;
 }
 
@@ -3734,9 +3726,6 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
         }
         Node* n = _gvn.transform(ac);
         if (n == ac) {
-          if (UseShenandoahGC) {
-            ac->_adr_type = TypePtr::BOTTOM;
-          }
           ac->connect_outputs(this);
         } else {
           assert(validated, "shouldn't transform if all arguments not validated");
@@ -4337,9 +4326,6 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
           ac->set_cloneoop();
           Node* n = _gvn.transform(ac);
           assert(n == ac, "cannot disappear");
-          if (UseShenandoahGC) {
-            ac->_adr_type = TypePtr::BOTTOM;
-          }
           ac->connect_outputs(this);
 
           result_reg->init_req(_objArray_path, control());
@@ -4821,9 +4807,6 @@ bool LibraryCallKit::inline_arraycopy() {
 
   Node* n = _gvn.transform(ac);
   if (n == ac) {
-    if (UseShenandoahGC) {
-      ac->_adr_type = TypePtr::BOTTOM;
-    }
     ac->connect_outputs(this);
   } else {
     assert(validated, "shouldn't transform if all arguments not validated");
@@ -5026,17 +5009,12 @@ bool LibraryCallKit::inline_multiplyToLen() {
      } __ else_(); {
        // Update graphKit memory and control from IdealKit.
        sync_kit(ideal);
-       Node* zlen_arg = NULL;
-       if (UseShenandoahGC) {
-         Node *cast = new CastPPNode(z, TypePtr::NOTNULL);
-         cast->init_req(0, control());
-         _gvn.set_type(cast, cast->bottom_type());
-         C->record_for_igvn(cast);
+       Node *cast = new CastPPNode(z, TypePtr::NOTNULL);
+       cast->init_req(0, control());
+       _gvn.set_type(cast, cast->bottom_type());
+       C->record_for_igvn(cast);
 
-         zlen_arg = load_array_length(cast);
-       } else {
-         zlen_arg = load_array_length(z);
-       }
+       Node* zlen_arg = load_array_length(cast);
        // Update IdealKit memory and control from graphKit.
        __ sync_kit(this);
        __ if_then(zlen_arg, BoolTest::lt, zlen); {

@@ -1000,10 +1000,10 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
         assert(found_sfpt, "no node in loop that's not input to safepoint");
       }
     }
+    CountedLoopEndNode* cle = inner_out->in(0)->as_CountedLoopEnd();
+    assert(cle == inner->loopexit_or_null(), "mismatch");
     bool has_skeleton = outer_le->in(1)->bottom_type()->singleton() && outer_le->in(1)->bottom_type()->is_int()->get_con() == 0;
     if (has_skeleton) {
-      CountedLoopEndNode* cle = inner_out->in(0)->as_CountedLoopEnd();
-      assert(cle == inner->loopexit_or_null(), "mismatch");
       assert(expect_skeleton == 1 || expect_skeleton == -1, "unexpected skeleton node");
       assert(outer->outcnt() == 2, "only phis");
     } else {
