@@ -26,7 +26,7 @@
 
 #include "gc/shared/plab.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
-#include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
+#include "gc/shenandoah/shenandoahSATBMarkQueue.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/sizes.hpp"
@@ -78,7 +78,7 @@ public:
     data(thread)->~ShenandoahThreadLocalData();
   }
 
-  static SATBMarkQueue& satb_mark_queue(Thread* thread) {
+  static ShenandoahSATBMarkQueue& satb_mark_queue(Thread* thread) {
     return data(thread)->_satb_mark_queue;
   }
 
@@ -155,15 +155,15 @@ public:
 
   // Offsets
   static ByteSize satb_mark_queue_active_offset() {
-    return satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active();
+    return satb_mark_queue_offset() + ShenandoahSATBMarkQueue::byte_offset_of_active();
   }
 
   static ByteSize satb_mark_queue_index_offset() {
-    return satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_index();
+    return satb_mark_queue_offset() + ShenandoahSATBMarkQueue::byte_offset_of_index();
   }
 
   static ByteSize satb_mark_queue_buffer_offset() {
-    return satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_buf();
+    return satb_mark_queue_offset() + ShenandoahSATBMarkQueue::byte_offset_of_buf();
   }
 
   static ByteSize gc_state_offset() {

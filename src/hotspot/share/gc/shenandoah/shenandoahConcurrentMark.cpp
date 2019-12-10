@@ -175,11 +175,11 @@ public:
 
 class ShenandoahSATBThreadsClosure : public ThreadClosure {
 private:
-  ShenandoahSATBBufferClosure* _satb_cl;
+  ShenandoahConcMarkSATBBufferClosure* _satb_cl;
   int _thread_parity;
 
 public:
-  ShenandoahSATBThreadsClosure(ShenandoahSATBBufferClosure* satb_cl) :
+  ShenandoahSATBThreadsClosure(ShenandoahConcMarkSATBBufferClosure* satb_cl) :
     _satb_cl(satb_cl),
     _thread_parity(Threads::thread_claim_parity()) {}
 
@@ -219,8 +219,8 @@ public:
     // full-gc.
     {
       ShenandoahObjToScanQueue* q = _cm->get_queue(worker_id);
-      ShenandoahSATBBufferClosure cl(q);
-      SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
+      ShenandoahConcMarkSATBBufferClosure cl(q);
+      ShenandoahSATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
       while (satb_mq_set.apply_closure_to_completed_buffer(&cl));
       ShenandoahSATBThreadsClosure tc(&cl);
       Threads::threads_do(&tc);
@@ -973,8 +973,8 @@ void ShenandoahConcurrentMark::mark_loop_work(T* cl, jushort* live_data, uint wo
   }
   q = get_queue(worker_id);
 
-  ShenandoahSATBBufferClosure drain_satb(q);
-  SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
+  ShenandoahConcMarkSATBBufferClosure drain_satb(q);
+  ShenandoahSATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
 
   /*
    * Normal marking loop:

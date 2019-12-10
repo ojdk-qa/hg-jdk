@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,6 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1ThreadLocalData.hpp"
-#include "gc/g1/satbMarkQueue.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -35,8 +32,12 @@
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
+#include "utilities/macros.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahSATBMarkQueue.hpp"
+#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 
-SATBMarkQueue::SATBMarkQueue(SATBMarkQueueSet* qset, bool permanent) :
+ShenandoahSATBMarkQueue::ShenandoahSATBMarkQueue(ShenandoahSATBMarkQueueSet* qset, bool permanent) :
   // SATB queues are only active during marking cycles. We create
   // them with their active field set to false. If a thread is
   // created during a cycle and its SATB queue needs to be activated
@@ -45,7 +46,7 @@ SATBMarkQueue::SATBMarkQueue(SATBMarkQueueSet* qset, bool permanent) :
   PtrQueue(qset, permanent, false /* active */)
 { }
 
-void SATBMarkQueue::flush() {
+void ShenandoahSATBMarkQueue::flush() {
   // Filter now to possibly save work later.  If filtering empties the
   // buffer then flush_impl can deallocate the buffer.
   filter();
@@ -55,7 +56,7 @@ void SATBMarkQueue::flush() {
 // Return true if a SATB buffer entry refers to an object that
 // requires marking.
 //
-// The entry must point into the G1 heap.  In particular, it must not
+// The entry must point into the Shenandoah heap.  In particular, it must not
 // be a NULL pointer.  NULL pointers are pre-filtered and never
 // inserted into a SATB buffer.
 //
@@ -86,25 +87,8 @@ void SATBMarkQueue::flush() {
 // processing must be somewhat circumspect and not assume entries
 // in an unfiltered buffer refer to valid objects.
 
-inline bool requires_marking(const void* entry, G1CollectedHeap* heap) {
-  // Includes rejection of NULL pointers.
-  assert(heap->is_in_reserved(entry),
-         "Non-heap pointer in SATB buffer: " PTR_FORMAT, p2i(entry));
-
-  HeapRegion* region = heap->heap_region_containing(entry);
-  assert(region != NULL, "No region for " PTR_FORMAT, p2i(entry));
-  if (entry >= region->next_top_at_mark_start()) {
-    return false;
-  }
-
-  assert(oopDesc::is_oop(oop(entry), true /* ignore mark word */),
-         "Invalid oop in SATB buffer: " PTR_FORMAT, p2i(entry));
-
-  return true;
-}
-
-inline bool retain_entry(const void* entry, G1CollectedHeap* heap) {
-  return requires_marking(entry, heap) && !heap->is_marked_next((oop)entry);
+inline bool retain_entry(const void* entry, ShenandoahHeap* heap) {
+  return heap->requires_marking(entry);
 }
 
 // This method removes entries from a SATB buffer that will not be
@@ -112,8 +96,8 @@ inline bool retain_entry(const void* entry, G1CollectedHeap* heap) {
 // they require marking and are not already marked. Retained entries
 // are compacted toward the top of the buffer.
 
-void SATBMarkQueue::filter() {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+void ShenandoahSATBMarkQueue::filter() {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
   void** buf = _buf;
 
   if (buf == NULL) {
@@ -128,10 +112,10 @@ void SATBMarkQueue::filter() {
   for ( ; src < dst; ++src) {
     // Search low to high for an entry to keep.
     void* entry = *src;
-    if (retain_entry(entry, g1h)) {
+    if (retain_entry(entry, heap)) {
       // Found keeper.  Search high to low for an entry to discard.
       while (src < --dst) {
-        if (!retain_entry(*dst, g1h)) {
+        if (!retain_entry(*dst, heap)) {
           *dst = entry;         // Replace discard with keeper.
           break;
         }
@@ -150,7 +134,7 @@ void SATBMarkQueue::filter() {
 // allow the mutator to carry on executing using the same buffer
 // instead of replacing it.
 
-bool SATBMarkQueue::should_enqueue_buffer() {
+bool ShenandoahSATBMarkQueue::should_enqueue_buffer() {
   assert(_lock == NULL || _lock->owned_by_self(),
          "we should have taken the lock before calling this");
 
@@ -166,10 +150,22 @@ bool SATBMarkQueue::should_enqueue_buffer() {
   size_t cap = capacity();
   size_t percent_used = ((cap - index()) * 100) / cap;
   bool should_enqueue = percent_used > G1SATBBufferEnqueueingThresholdPercent;
+
+  Thread* t = Thread::current();
+  if (ShenandoahThreadLocalData::is_force_satb_flush(t)) {
+    if (!should_enqueue && cap != index()) {
+      // Non-empty buffer is compacted, and we decided not to enqueue it.
+      // We still want to know about leftover work in that buffer eventually.
+      // This avoid dealing with these leftovers during the final-mark, after
+      // the buffers are drained completely. See JDK-8205353 for more discussion.
+      should_enqueue = true;
+    }
+    ShenandoahThreadLocalData::set_force_satb_flush(t, false);
+  }
   return should_enqueue;
 }
 
-void SATBMarkQueue::apply_closure_and_empty(SATBBufferClosure* cl) {
+void ShenandoahSATBMarkQueue::apply_closure_and_empty(ShenandoahSATBBufferClosure* cl) {
   assert(SafepointSynchronize::is_at_safepoint(),
          "SATB queues must only be processed at safepoints");
   if (_buf != NULL) {
@@ -190,39 +186,35 @@ static void print_satb_buffer(const char* name,
                 name, p2i(buf), index, capacity);
 }
 
-void SATBMarkQueue::print(const char* name) {
+void ShenandoahSATBMarkQueue::print(const char* name) {
   print_satb_buffer(name, _buf, index(), capacity());
 }
 
 #endif // PRODUCT
 
-SATBMarkQueueSet::SATBMarkQueueSet() :
+ShenandoahSATBMarkQueueSet::ShenandoahSATBMarkQueueSet() :
   PtrQueueSet(),
   _shared_satb_queue(this, true /* permanent */) { }
 
-void SATBMarkQueueSet::initialize(Monitor* cbl_mon, Mutex* fl_lock,
-                                  int process_completed_threshold,
-                                  Mutex* lock) {
+void ShenandoahSATBMarkQueueSet::initialize(Monitor* cbl_mon, Mutex* fl_lock,
+                                            int process_completed_threshold,
+                                            Mutex* lock) {
   PtrQueueSet::initialize(cbl_mon, fl_lock, process_completed_threshold, -1);
   _shared_satb_queue.set_lock(lock);
 }
 
-void SATBMarkQueueSet::handle_zero_index_for_thread(JavaThread* t) {
-  G1ThreadLocalData::satb_mark_queue(t).handle_zero_index();
-}
-
 #ifdef ASSERT
-void SATBMarkQueueSet::dump_active_states(bool expected_active) {
+void ShenandoahSATBMarkQueueSet::dump_active_states(bool expected_active) {
   log_error(gc, verify)("Expected SATB active state: %s", expected_active ? "ACTIVE" : "INACTIVE");
   log_error(gc, verify)("Actual SATB active states:");
   log_error(gc, verify)("  Queue set: %s", is_active() ? "ACTIVE" : "INACTIVE");
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    log_error(gc, verify)("  Thread \"%s\" queue: %s", t->name(), G1ThreadLocalData::satb_mark_queue(t).is_active() ? "ACTIVE" : "INACTIVE");
+    log_error(gc, verify)("  Thread \"%s\" queue: %s", t->name(), satb_queue_for_thread(t).is_active() ? "ACTIVE" : "INACTIVE");
   }
   log_error(gc, verify)("  Shared queue: %s", shared_satb_queue()->is_active() ? "ACTIVE" : "INACTIVE");
 }
 
-void SATBMarkQueueSet::verify_active_states(bool expected_active) {
+void ShenandoahSATBMarkQueueSet::verify_active_states(bool expected_active) {
   // Verify queue set state
   if (is_active() != expected_active) {
     dump_active_states(expected_active);
@@ -231,7 +223,7 @@ void SATBMarkQueueSet::verify_active_states(bool expected_active) {
 
   // Verify thread queue states
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    if (G1ThreadLocalData::satb_mark_queue(t).is_active() != expected_active) {
+    if (satb_queue_for_thread(t).is_active() != expected_active) {
       dump_active_states(expected_active);
       guarantee(false, "Thread SATB queue has an unexpected active state");
     }
@@ -245,26 +237,26 @@ void SATBMarkQueueSet::verify_active_states(bool expected_active) {
 }
 #endif // ASSERT
 
-void SATBMarkQueueSet::set_active_all_threads(bool active, bool expected_active) {
+void ShenandoahSATBMarkQueueSet::set_active_all_threads(bool active, bool expected_active) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
 #ifdef ASSERT
   verify_active_states(expected_active);
 #endif // ASSERT
   _all_active = active;
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    G1ThreadLocalData::satb_mark_queue(t).set_active(active);
+    satb_queue_for_thread(t).set_active(active);
   }
   shared_satb_queue()->set_active(active);
 }
 
-void SATBMarkQueueSet::filter_thread_buffers() {
+void ShenandoahSATBMarkQueueSet::filter_thread_buffers() {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    G1ThreadLocalData::satb_mark_queue(t).filter();
+    satb_queue_for_thread(t).filter();
   }
   shared_satb_queue()->filter();
 }
 
-bool SATBMarkQueueSet::apply_closure_to_completed_buffer(SATBBufferClosure* cl) {
+bool ShenandoahSATBMarkQueueSet::apply_closure_to_completed_buffer(ShenandoahSATBBufferClosure* cl) {
   BufferNode* nd = NULL;
   {
     MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
@@ -294,7 +286,7 @@ bool SATBMarkQueueSet::apply_closure_to_completed_buffer(SATBBufferClosure* cl) 
 
 #define SATB_PRINTER_BUFFER_SIZE 256
 
-void SATBMarkQueueSet::print_all(const char* msg) {
+void ShenandoahSATBMarkQueueSet::print_all(const char* msg) {
   char buffer[SATB_PRINTER_BUFFER_SIZE];
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
 
@@ -313,7 +305,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
 
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
     jio_snprintf(buffer, SATB_PRINTER_BUFFER_SIZE, "Thread: %s", t->name());
-    G1ThreadLocalData::satb_mark_queue(t).print(buffer);
+    satb_queue_for_thread(t).print(buffer);
   }
 
   shared_satb_queue()->print("Shared");
@@ -322,7 +314,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
 }
 #endif // PRODUCT
 
-void SATBMarkQueueSet::abandon_partial_marking() {
+void ShenandoahSATBMarkQueueSet::abandon_partial_marking() {
   BufferNode* buffers_to_delete = NULL;
   {
     MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
@@ -344,7 +336,12 @@ void SATBMarkQueueSet::abandon_partial_marking() {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
   // So we can safely manipulate these queues.
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    G1ThreadLocalData::satb_mark_queue(t).reset();
+    satb_queue_for_thread(t).reset();
   }
   shared_satb_queue()->reset();
 }
+
+ShenandoahSATBMarkQueue& ShenandoahSATBMarkQueueSet::satb_queue_for_thread(Thread* t) {
+  return ShenandoahThreadLocalData::satb_mark_queue(t);
+}
+

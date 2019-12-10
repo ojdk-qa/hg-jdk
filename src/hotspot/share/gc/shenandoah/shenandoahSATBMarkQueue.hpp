@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,19 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_SATBMARKQUEUE_HPP
-#define SHARE_VM_GC_G1_SATBMARKQUEUE_HPP
+#ifndef SHARE_VM_GC_SHENANDOAH_SATBMARKQUEUE_HPP
+#define SHARE_VM_GC_SHENANDOAH_SATBMARKQUEUE_HPP
 
 #include "gc/g1/ptrQueue.hpp"
 #include "memory/allocation.hpp"
 
 class JavaThread;
-class SATBMarkQueueSet;
+class ShenandoahSATBMarkQueueSet;
 
 // Base class for processing the contents of a SATB buffer.
-class SATBBufferClosure : public StackObj {
+class ShenandoahSATBBufferClosure : public StackObj {
 protected:
-  ~SATBBufferClosure() { }
+  ~ShenandoahSATBBufferClosure() { }
 
 public:
   // Process the SATB entries in the designated buffer range.
@@ -42,22 +42,25 @@ public:
 };
 
 // A PtrQueue whose elements are (possibly stale) pointers to object heads.
-class SATBMarkQueue: public PtrQueue {
-  friend class SATBMarkQueueSet;
+class ShenandoahSATBMarkQueue: public PtrQueue {
+  friend class ShenandoahSATBMarkQueueSet;
 
 private:
   // Filter out unwanted entries from the buffer.
   void filter();
 
+  template <class HeapType>
+  void filter_impl();
+
 public:
-  SATBMarkQueue(SATBMarkQueueSet* qset, bool permanent = false);
+  ShenandoahSATBMarkQueue(ShenandoahSATBMarkQueueSet* qset, bool permanent = false);
 
   // Process queue entries and free resources.
   void flush();
 
   // Apply cl to the active part of the buffer.
   // Prerequisite: Must be at a safepoint.
-  void apply_closure_and_empty(SATBBufferClosure* cl);
+  void apply_closure_and_empty(ShenandoahSATBBufferClosure* cl);
 
   // Overrides PtrQueue::should_enqueue_buffer(). See the method's
   // definition for more information.
@@ -70,24 +73,24 @@ public:
 
   // Compiler support.
   static ByteSize byte_offset_of_index() {
-    return PtrQueue::byte_offset_of_index<SATBMarkQueue>();
+    return PtrQueue::byte_offset_of_index<ShenandoahSATBMarkQueue>();
   }
   using PtrQueue::byte_width_of_index;
 
   static ByteSize byte_offset_of_buf() {
-    return PtrQueue::byte_offset_of_buf<SATBMarkQueue>();
+    return PtrQueue::byte_offset_of_buf<ShenandoahSATBMarkQueue>();
   }
   using PtrQueue::byte_width_of_buf;
 
   static ByteSize byte_offset_of_active() {
-    return PtrQueue::byte_offset_of_active<SATBMarkQueue>();
+    return PtrQueue::byte_offset_of_active<ShenandoahSATBMarkQueue>();
   }
   using PtrQueue::byte_width_of_active;
 
 };
 
-class SATBMarkQueueSet: public PtrQueueSet {
-  SATBMarkQueue _shared_satb_queue;
+class ShenandoahSATBMarkQueueSet: public PtrQueueSet {
+  ShenandoahSATBMarkQueue _shared_satb_queue;
 
 #ifdef ASSERT
   void dump_active_states(bool expected_active);
@@ -95,13 +98,13 @@ class SATBMarkQueueSet: public PtrQueueSet {
 #endif // ASSERT
 
 public:
-  SATBMarkQueueSet();
+  ShenandoahSATBMarkQueueSet();
 
   void initialize(Monitor* cbl_mon, Mutex* fl_lock,
                   int process_completed_threshold,
                   Mutex* lock);
 
-  static void handle_zero_index_for_thread(JavaThread* t);
+  ShenandoahSATBMarkQueue& satb_queue_for_thread(Thread* t);
 
   // Apply "set_active(active)" to all SATB queues in the set. It should be
   // called only with the world stopped. The method will assert that the
@@ -116,17 +119,17 @@ public:
   // return true.  Otherwise return false.  Processing a buffer
   // consists of applying the closure to the active range of the
   // buffer; the leading entries may be excluded due to filtering.
-  bool apply_closure_to_completed_buffer(SATBBufferClosure* cl);
+  bool apply_closure_to_completed_buffer(ShenandoahSATBBufferClosure* cl);
 
 #ifndef PRODUCT
   // Helpful for debugging
   void print_all(const char* msg);
 #endif // PRODUCT
 
-  SATBMarkQueue* shared_satb_queue() { return &_shared_satb_queue; }
+  ShenandoahSATBMarkQueue* shared_satb_queue() { return &_shared_satb_queue; }
 
   // If a marking is being abandoned, reset any unprocessed log buffers.
   void abandon_partial_marking();
 };
 
-#endif // SHARE_VM_GC_G1_SATBMARKQUEUE_HPP
+#endif // SHARE_VM_GC_SHENANDOAH_SATBMARKQUEUE_HPP

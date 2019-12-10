@@ -23,10 +23,10 @@
 
 #include "precompiled.hpp"
 #include "c1/c1_IR.hpp"
-#include "gc/g1/satbMarkQueue.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahSATBMarkQueue.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 
@@ -55,10 +55,10 @@ void ShenandoahBarrierSetC1::pre_barrier(LIRGenerator* gen, CodeEmitInfo* info, 
   BasicType flag_type;
   bool patch = (decorators & C1_NEEDS_PATCHING) != 0;
   bool do_load = pre_val == LIR_OprFact::illegalOpr;
-  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
+  if (in_bytes(ShenandoahSATBMarkQueue::byte_width_of_active()) == 4) {
     flag_type = T_INT;
   } else {
-    guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1,
+    guarantee(in_bytes(ShenandoahSATBMarkQueue::byte_width_of_active()) == 1,
               "Assumption");
     // Use unsigned type T_BOOLEAN here rather than signed T_BYTE since some platforms, eg. ARM,
     // need to use unsigned instructions to use the large offset to load the satb_mark_queue.

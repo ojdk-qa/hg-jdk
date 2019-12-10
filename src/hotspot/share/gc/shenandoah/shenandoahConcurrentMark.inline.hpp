@@ -192,13 +192,13 @@ inline void ShenandoahConcurrentMark::do_chunked_array(ShenandoahObjToScanQueue*
   array->oop_iterate_range(cl, from, to);
 }
 
-class ShenandoahSATBBufferClosure : public SATBBufferClosure {
+class ShenandoahConcMarkSATBBufferClosure : public ShenandoahSATBBufferClosure {
 private:
   ShenandoahObjToScanQueue* _queue;
   ShenandoahHeap* _heap;
   ShenandoahMarkingContext* const _mark_context;
 public:
-  ShenandoahSATBBufferClosure(ShenandoahObjToScanQueue* q) :
+  ShenandoahConcMarkSATBBufferClosure(ShenandoahObjToScanQueue* q) :
     _queue(q),
     _heap(ShenandoahHeap::heap()),
     _mark_context(_heap->marking_context())

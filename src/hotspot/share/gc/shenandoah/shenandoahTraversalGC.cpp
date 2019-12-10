@@ -93,7 +93,7 @@
  *   evacuated object. This way, the GC threads will not consider such objects
  *   implictely marked, and traverse through them as normal.
  */
-class ShenandoahTraversalSATBBufferClosure : public SATBBufferClosure {
+class ShenandoahTraversalSATBBufferClosure : public ShenandoahSATBBufferClosure {
 private:
   ShenandoahObjToScanQueue* _queue;
   ShenandoahTraversalGC* _traversal_gc;
@@ -258,7 +258,7 @@ public:
     ShenandoahTraversalSATBBufferClosure satb_cl(q);
     {
       // Process remaining finished SATB buffers.
-      SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
+      ShenandoahSATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
       while (satb_mq_set.apply_closure_to_completed_buffer(&satb_cl));
       // Process remaining threads SATB buffers below.
     }
@@ -527,7 +527,7 @@ void ShenandoahTraversalGC::main_loop_work(T* cl, jushort* live_data, uint worke
   q = queues->queue(worker_id);
 
   ShenandoahTraversalSATBBufferClosure drain_satb(q);
-  SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
+  ShenandoahSATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
 
   int seed = 17;
 

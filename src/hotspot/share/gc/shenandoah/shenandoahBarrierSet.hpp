@@ -27,7 +27,7 @@
 #include "gc/shared/accessBarrierSupport.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
-#include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
+#include "gc/shenandoah/shenandoahSATBMarkQueue.hpp"
 
 class ShenandoahBarrierSetAssembler;
 
@@ -53,7 +53,7 @@ public:
     return barrier_set_cast<ShenandoahBarrierSet>(BarrierSet::barrier_set());
   }
 
-  static SATBMarkQueueSet& satb_mark_queue_set() {
+  static ShenandoahSATBMarkQueueSet& satb_mark_queue_set() {
     return _satb_mark_queue_set;
   }
 
