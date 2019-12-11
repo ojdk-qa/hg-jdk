@@ -2876,7 +2876,7 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
   worklist.push( C->root() );
   NOT_PRODUCT( C->verify_graph_edges(); )
   worklist.push( C->top() );
-  build_loop_late(visited, worklist, nstack, !shenandoah_opts);
+  build_loop_late( visited, worklist, nstack );
 
   if (_verify_only) {
     // restore major progress flag
@@ -4106,7 +4106,7 @@ void PhaseIdealLoop::clear_dom_lca_tags() {
 //------------------------------build_loop_late--------------------------------
 // Put Data nodes into some loop nest, by setting the _nodes[]->loop mapping.
 // Second pass finds latest legal placement, and ideal loop placement.
-void PhaseIdealLoop::build_loop_late(VectorSet &visited, Node_List &worklist, Node_Stack &nstack, bool verify_strip_mined) {
+void PhaseIdealLoop::build_loop_late( VectorSet &visited, Node_List &worklist, Node_Stack &nstack ) {
   while (worklist.size() != 0) {
     Node *n = worklist.pop();
     // Only visit once
@@ -4142,7 +4142,7 @@ void PhaseIdealLoop::build_loop_late(VectorSet &visited, Node_List &worklist, No
         }
       } else {
         // All of n's children have been processed, complete post-processing.
-        build_loop_late_post(n, verify_strip_mined);
+        build_loop_late_post(n);
         if (nstack.is_empty()) {
           // Finished all nodes on stack.
           // Process next node on the worklist.
@@ -4167,7 +4167,9 @@ void PhaseIdealLoop::verify_strip_mined_scheduling(Node *n, Node* least) {
   }
   IdealLoopTree* loop = get_loop(least);
   Node* head = loop->_head;
-  if (head->is_OuterStripMinedLoop()) {
+  if (head->is_OuterStripMinedLoop() &&
+      // Verification can't be applied to fully built strip mined loops
+      head->as_Loop()->outer_loop_end()->in(1)->find_int_con(-1) == 0) {
     Node* sfpt = head->as_Loop()->outer_safepoint();
     ResourceMark rm;
     Unique_Node_List wq;
@@ -4193,7 +4195,7 @@ void PhaseIdealLoop::verify_strip_mined_scheduling(Node *n, Node* least) {
 //------------------------------build_loop_late_post---------------------------
 // Put Data nodes into some loop nest, by setting the _nodes[]->loop mapping.
 // Second pass finds latest legal placement, and ideal loop placement.
-void PhaseIdealLoop::build_loop_late_post(Node *n, bool verify_strip_mined) {
+void PhaseIdealLoop::build_loop_late_post( Node *n ) {
 
   if (n->req() == 2 && (n->Opcode() == Op_ConvI2L || n->Opcode() == Op_CastII) && !C->major_progress() && !_verify_only) {
     _igvn._worklist.push(n);  // Maybe we'll normalize it, if no more loops.
@@ -4349,9 +4351,7 @@ void PhaseIdealLoop::build_loop_late_post(Node *n, bool verify_strip_mined) {
 
   // Assign discovered "here or above" point
   least = find_non_split_ctrl(least);
-  if (verify_strip_mined && !_verify_only) {
-    verify_strip_mined_scheduling(n, least);
-  }
+  verify_strip_mined_scheduling(n, least);
   set_ctrl(n, least);
 
   // Collect inner loop bodies
