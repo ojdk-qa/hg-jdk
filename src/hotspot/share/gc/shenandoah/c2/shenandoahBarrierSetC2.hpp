@@ -141,6 +141,9 @@ public:
 #endif
 
   virtual Node* ideal_node(PhaseGVN* phase, Node* n, bool can_reshape) const;
+
+  Node* arraycopy_load_reference_barrier(PhaseGVN *phase, Node* v);
+
 };
 
 #endif // SHARE_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP

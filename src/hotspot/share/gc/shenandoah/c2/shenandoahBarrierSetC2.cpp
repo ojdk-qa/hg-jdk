@@ -1002,3 +1002,14 @@ bool ShenandoahBarrierSetC2::has_only_shenandoah_wb_pre_uses(Node* n) {
   }
   return n->outcnt() > 0;
 }
+
+Node* ShenandoahBarrierSetC2::arraycopy_load_reference_barrier(PhaseGVN *phase, Node* v) {
+  if (ShenandoahLoadRefBarrier) {
+    return phase->transform(new ShenandoahLoadReferenceBarrierNode(NULL, v));
+  }
+  if (ShenandoahStoreValEnqueueBarrier) {
+    return phase->transform(new ShenandoahEnqueueBarrierNode(v));
+  }
+  return v;
+}
+

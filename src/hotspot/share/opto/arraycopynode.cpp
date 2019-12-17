@@ -151,18 +151,6 @@ int ArrayCopyNode::get_count(PhaseGVN *phase) const {
   return get_length_if_constant(phase);
 }
 
-#if INCLUDE_SHENANDOAHGC
-Node* ArrayCopyNode::shenandoah_add_storeval_barrier(PhaseGVN *phase, Node* v) {
-  if (ShenandoahLoadRefBarrier) {
-    return phase->transform(new ShenandoahLoadReferenceBarrierNode(NULL, v));
-  }
-  if (ShenandoahStoreValEnqueueBarrier) {
-    return phase->transform(new ShenandoahEnqueueBarrierNode(v));
-  }
-  return v;
-}
-#endif
-
 Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int count) {
   if (!is_clonebasic()) {
     return NULL;
@@ -222,7 +210,7 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
     v = phase->transform(v);
 #if INCLUDE_SHENANDOAHGC
     if (UseShenandoahGC && bt == T_OBJECT) {
-      v = shenandoah_add_storeval_barrier(phase, v);
+      v = ShenandoahBarrierSetC2::bsc2()->arraycopy_load_reference_barrier(phase, v);
     }
 #endif
     Node* s = StoreNode::make(*phase, ctl, mem->memory_at(fieldidx), next_dest, adr_type, v, bt, MemNode::unordered);
@@ -395,7 +383,7 @@ Node* ArrayCopyNode::array_copy_forward(PhaseGVN *phase,
       v = phase->transform(v);
 #if INCLUDE_SHENANDOAHGC
       if (UseShenandoahGC && copy_type == T_OBJECT) {
-        v = shenandoah_add_storeval_barrier(phase, v);
+        v = ShenandoahBarrierSetC2::bsc2()->arraycopy_load_reference_barrier(phase, v);
       }
 #endif
       mem = StoreNode::make(*phase, forward_ctl, mem, adr_dest, atp_dest, v, copy_type, MemNode::unordered);
@@ -408,7 +396,7 @@ Node* ArrayCopyNode::array_copy_forward(PhaseGVN *phase,
         v = phase->transform(v);
 #if INCLUDE_SHENANDOAHGC
         if (UseShenandoahGC && copy_type == T_OBJECT) {
-          v = shenandoah_add_storeval_barrier(phase, v);
+          v = ShenandoahBarrierSetC2::bsc2()->arraycopy_load_reference_barrier(phase, v);
         }
 #endif
         mem = StoreNode::make(*phase, forward_ctl,mem,next_dest,atp_dest,v, copy_type, MemNode::unordered);
@@ -454,7 +442,7 @@ Node* ArrayCopyNode::array_copy_backward(PhaseGVN *phase,
         v = phase->transform(v);
 #if INCLUDE_SHENANDOAHGC
         if (UseShenandoahGC && copy_type == T_OBJECT) {
-          v = shenandoah_add_storeval_barrier(phase, v);
+          v = ShenandoahBarrierSetC2::bsc2()->arraycopy_load_reference_barrier(phase, v);
         }
 #endif
         mem = StoreNode::make(*phase, backward_ctl,mem,next_dest,atp_dest,v, copy_type, MemNode::unordered);
@@ -464,7 +452,7 @@ Node* ArrayCopyNode::array_copy_backward(PhaseGVN *phase,
       v = phase->transform(v);
 #if INCLUDE_SHENANDOAHGC
       if (UseShenandoahGC && copy_type == T_OBJECT) {
-        v = shenandoah_add_storeval_barrier(phase, v);
+        v = ShenandoahBarrierSetC2::bsc2()->arraycopy_load_reference_barrier(phase, v);
       }
 #endif
       mem = StoreNode::make(*phase, backward_ctl, mem, adr_dest, atp_dest, v, copy_type, MemNode::unordered);
