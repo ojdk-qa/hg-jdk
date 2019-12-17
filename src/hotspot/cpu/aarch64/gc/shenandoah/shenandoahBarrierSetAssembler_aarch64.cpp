@@ -147,10 +147,10 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
   Address buffer(thread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_buffer_offset()));
 
   // Is marking active?
-  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
+  if (in_bytes(ShenandoahSATBMarkQueue::byte_width_of_active()) == 4) {
     __ ldrw(tmp, in_progress);
   } else {
-    assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+    assert(in_bytes(ShenandoahSATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
     __ ldrb(tmp, in_progress);
   }
   __ cbzw(tmp, done);
