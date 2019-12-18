@@ -1678,6 +1678,14 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
         }
       }
     }
+
+    // TODO: Needed after the block above?
+    if (use->is_ShenandoahBarrier()) {
+      Node* cmp = use->find_out_with(Op_CmpP);
+      if (cmp != NULL) {
+        _worklist.push(cmp);
+      }
+    }
   }
 }
 
@@ -2105,6 +2113,10 @@ void Node::set_req_X( uint i, Node *n, PhaseIterGVN *igvn ) {
       break;
     default:
       break;
+    }
+    if (UseShenandoahGC) {
+      // TODO: Should we call this for ZGC as well?
+      BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(igvn->_worklist, old);
     }
   }
 

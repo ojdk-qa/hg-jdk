@@ -925,11 +925,11 @@ public:
     _dom_lca_tags(arena()), // Thread::resource_area
     _verify_me(NULL),
     _verify_only(true) {
-    build_and_optimize(false, false);
+    build_and_optimize(LoopOptsVerify);
   }
 
   // build the loop tree and perform any requested optimizations
-  void build_and_optimize(bool do_split_if, bool skip_loop_opts, bool last_round = false);
+  void build_and_optimize(LoopOptsMode mode);
 
   // Dominators for the sea of nodes
   void Dominators();
@@ -939,13 +939,13 @@ public:
   Node *dom_lca_internal( Node *n1, Node *n2 ) const;
 
   // Compute the Ideal Node to Loop mapping
-  PhaseIdealLoop( PhaseIterGVN &igvn, bool do_split_ifs, bool skip_loop_opts = false, bool last_round = false) :
+  PhaseIdealLoop( PhaseIterGVN &igvn, LoopOptsMode mode) :
     PhaseTransform(Ideal_Loop),
     _igvn(igvn),
     _dom_lca_tags(arena()), // Thread::resource_area
     _verify_me(NULL),
     _verify_only(false) {
-    build_and_optimize(do_split_ifs, skip_loop_opts, last_round);
+      build_and_optimize(mode);
   }
 
   // Verify that verify_me made the same decisions as a fresh run.
@@ -955,7 +955,7 @@ public:
     _dom_lca_tags(arena()), // Thread::resource_area
     _verify_me(verify_me),
     _verify_only(false) {
-    build_and_optimize(false, false);
+    build_and_optimize(LoopOptsVerify);
   }
 
   // Build and verify the loop tree without modifying the graph.  This
@@ -1291,8 +1291,10 @@ private:
   Node *place_near_use( Node *useblock ) const;
   Node* try_move_store_before_loop(Node* n, Node *n_ctrl);
   void try_move_store_after_loop(Node* n);
+public:
   bool identical_backtoback_ifs(Node *n);
   bool can_split_if(Node *n_ctrl);
+private:
 
   bool _created_loop_node;
 public:
@@ -1307,7 +1309,6 @@ public:
 #ifndef PRODUCT
   void dump( ) const;
   void dump( IdealLoopTree *loop, uint rpo_idx, Node_List &rpo_list ) const;
-  void rpo( Node *start, Node_Stack &stk, VectorSet &visited, Node_List &rpo_list ) const;
   void verify() const;          // Major slow  :-)
   void verify_compare( Node *n, const PhaseIdealLoop *loop_verify, VectorSet &visited ) const;
   IdealLoopTree *get_loop_idx(Node* n) const {
@@ -1319,6 +1320,9 @@ public:
   static int _loop_invokes;     // Count of PhaseIdealLoop invokes
   static int _loop_work;        // Sum of PhaseIdealLoop x _unique
 #endif
+  void rpo( Node *start, Node_Stack &stk, VectorSet &visited, Node_List &rpo_list ) const;
+
+  PhaseIterGVN& igvn() { return _igvn; }
 };
 
 // This kit may be used for making of a reserved copy of a loop before this loop

@@ -40,6 +40,10 @@
 #include "opto/mulnode.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/superword.hpp"
+#include "utilities/macros.hpp"
+#if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
+#endif
 
 //=============================================================================
 //------------------------------is_loop_iv-------------------------------------
@@ -2713,7 +2717,12 @@ bool PhaseIdealLoop::process_expensive_nodes() {
 //----------------------------build_and_optimize-------------------------------
 // Create a PhaseLoop.  Build the ideal Loop tree.  Map each Ideal Node to
 // its corresponding LoopNode.  If 'optimize' is true, do some loop cleanups.
-void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts, bool last_round) {
+void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
+  bool do_split_ifs = (mode == LoopOptsDefault || mode == LoopOptsZgcLastRound);
+  bool skip_loop_opts = (mode == LoopOptsNone) ;
+  bool shenandoah_opts = (mode == LoopOptsShenandoahExpand ||
+                          mode == LoopOptsShenandoahPostExpand);
+
   ResourceMark rm;
 
   int old_progress = C->major_progress();
@@ -2777,7 +2786,7 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts, 
   }
 
   // Nothing to do, so get out
-  bool stop_early = !C->has_loops() && !skip_loop_opts && !do_split_ifs && !_verify_me && !_verify_only;
+  bool stop_early = !C->has_loops() && !skip_loop_opts && !do_split_ifs && !_verify_me && !_verify_only && !shenandoah_opts;
   bool do_expensive_nodes = C->should_optimize_expensive_nodes(_igvn);
   if (stop_early && !do_expensive_nodes) {
     _igvn.optimize();           // Cleanup NeverBranches
@@ -2856,8 +2865,9 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts, 
 
   // Given early legal placement, try finding counted loops.  This placement
   // is good enough to discover most loop invariants.
-  if( !_verify_me && !_verify_only )
-    _ltree_root->counted_loop( this );
+  if (!_verify_me && !_verify_only && !shenandoah_opts) {
+    _ltree_root->counted_loop(this);
+  }
 
   // Find latest loop placement.  Find ideal loop placement.
   visited.Clear();
@@ -2928,6 +2938,16 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts, 
     return;
   }
 
+#if INCLUDE_SHENANDOAHGC
+  if (UseShenandoahGC && ((ShenandoahBarrierSetC2*) BarrierSet::barrier_set()->barrier_set_c2())->optimize_loops(this, mode, visited, nstack, worklist)) {
+    _igvn.optimize();
+    if (C->log() != NULL) {
+      log_loop_tree(_ltree_root, _ltree_root, C->log());
+    }
+    return;
+  }
+#endif
+
   if (ReassociateInvariants) {
     // Reassociate invariants and prep for split_thru_phi
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
@@ -2955,9 +2975,9 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts, 
   // that require basic-block info (like cloning through Phi's)
   if( SplitIfBlocks && do_split_ifs ) {
     visited.Clear();
-    split_if_with_blocks( visited, nstack, last_round );
+    split_if_with_blocks( visited, nstack, mode == LoopOptsZgcLastRound );
     NOT_PRODUCT( if( VerifyLoopOptimizations ) verify(); );
-    if (last_round) {
+    if (mode == LoopOptsZgcLastRound) {
       C->set_major_progress();
     }
   }
@@ -3958,7 +3978,8 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
     }
     while(worklist.size() != 0 && LCA != early) {
       Node* s = worklist.pop();
-      if (s->is_Load() || s->Opcode() == Op_SafePoint) {
+      if (s->is_Load() || s->is_ShenandoahBarrier() || s->Opcode() == Op_SafePoint ||
+          (UseShenandoahGC && s->is_CallStaticJava() && s->as_CallStaticJava()->uncommon_trap_request() != 0)) {
         continue;
       } else if (s->is_MergeMem()) {
         for (DUIterator_Fast imax, i = s->fast_outs(imax); i < imax; i++) {
@@ -4146,7 +4167,9 @@ void PhaseIdealLoop::verify_strip_mined_scheduling(Node *n, Node* least) {
   }
   IdealLoopTree* loop = get_loop(least);
   Node* head = loop->_head;
-  if (head->is_OuterStripMinedLoop()) {
+  if (head->is_OuterStripMinedLoop() &&
+      // Verification can't be applied to fully built strip mined loops
+      head->as_Loop()->outer_loop_end()->in(1)->find_int_con(-1) == 0) {
     Node* sfpt = head->as_Loop()->outer_safepoint();
     ResourceMark rm;
     Unique_Node_List wq;
@@ -4490,6 +4513,7 @@ void PhaseIdealLoop::dump( IdealLoopTree *loop, uint idx, Node_List &rpo_list ) 
     }
   }
 }
+#endif
 
 // Collect a R-P-O for the whole CFG.
 // Result list is in post-order (scan backwards for RPO)
@@ -4512,7 +4536,6 @@ void PhaseIdealLoop::rpo( Node *start, Node_Stack &stk, VectorSet &visited, Node
     }
   }
 }
-#endif
 
 
 //=============================================================================
