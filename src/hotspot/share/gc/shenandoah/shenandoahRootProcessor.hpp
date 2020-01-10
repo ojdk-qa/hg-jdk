@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2020, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -138,6 +138,7 @@ private:
   ShenandoahThreadRoots                                     _thread_roots;
   ShenandoahCodeCacheRoots<ITR>                             _code_roots;
   ShenandoahJNIHandleRoots                                  _jni_roots;
+  ShenandoahStringDedupRoots                                _dedup_roots;
   ShenandoahClassLoaderDataRoots<false /*single threaded*/> _cld_roots;
 public:
   ShenandoahRootScanner(uint n_workers, ShenandoahPhaseTimings::Phase phase);
