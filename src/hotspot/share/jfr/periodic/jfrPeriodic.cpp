@@ -28,7 +28,6 @@
 #include "classfile/javaClasses.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
-#include "gc/g1/g1HeapRegionEventSender.hpp"
 #include "gc/shared/gcConfiguration.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
@@ -61,9 +60,13 @@
 #include "services/threadService.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
+#if INCLUDE_G1GC
+#include "gc/g1/g1HeapRegionEventSender.hpp"
+#endif
 #if INCLUDE_SHENANDOAHGC
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
+
 /**
  *  JfrPeriodic class
  *  Implementation of declarations in
@@ -319,18 +322,8 @@ TRACE_REQUEST_FUNC(ObjectCount) {
   VMThread::execute(&op);
 }
 
-class VM_G1SendHeapRegionInfoEvents : public VM_Operation {
-  virtual void doit() {
-    G1HeapRegionEventSender::send_events();
-  }
-  virtual VMOp_Type type() const { return VMOp_HeapIterateOperation; }
-};
-
 TRACE_REQUEST_FUNC(G1HeapRegionInformation) {
-  if (UseG1GC) {
-    VM_G1SendHeapRegionInfoEvents op;
-    VMThread::execute(&op);
-  }
+  G1GC_ONLY(G1HeapRegionEventSender::send_events());
 }
 
 // Java Mission Control (JMC) uses (Java) Long.MIN_VALUE to describe that a
@@ -585,7 +578,6 @@ TRACE_REQUEST_FUNC(CodeSweeperConfiguration) {
   event.commit();
 }
 
-
 TRACE_REQUEST_FUNC(ShenandoahHeapRegionInformation) {
 #if INCLUDE_SHENANDOAHGC
   if (UseShenandoahGC) {
@@ -594,4 +586,3 @@ TRACE_REQUEST_FUNC(ShenandoahHeapRegionInformation) {
   }
 #endif
 }
-

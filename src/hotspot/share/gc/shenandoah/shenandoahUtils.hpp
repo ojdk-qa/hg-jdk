@@ -34,7 +34,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/vmThread.hpp"
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 #include "services/memoryService.hpp"
 
 class GCTimer;

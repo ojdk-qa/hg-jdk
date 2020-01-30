@@ -24,7 +24,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHJFRSUPPORT_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHJFRSUPPORT_HPP
 
-#include "runtime/vm_operations.hpp"
+#include "runtime/vmOperations.hpp"
 
 class VM_ShenandoahSendHeapRegionInfoEvents : public VM_Operation {
 public:
