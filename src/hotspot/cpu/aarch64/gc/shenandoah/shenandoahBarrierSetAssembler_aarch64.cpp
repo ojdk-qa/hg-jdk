@@ -44,7 +44,7 @@
 address ShenandoahBarrierSetAssembler::_shenandoah_lrb = NULL;
 
 void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
-                                                       Register addr, Register count, RegSet saved_regs) {
+                                                       Register src, Register dst, Register count, RegSet saved_regs) {
   if (is_oop) {
     bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
     if ((ShenandoahSATBBarrier && !dest_uninitialized) || ShenandoahLoadRefBarrier) {

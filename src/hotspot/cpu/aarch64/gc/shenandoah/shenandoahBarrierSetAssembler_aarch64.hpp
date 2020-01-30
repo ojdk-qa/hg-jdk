@@ -56,8 +56,8 @@ private:
 
   void resolve_forward_pointer(MacroAssembler* masm, Register dst, Register tmp = noreg);
   void resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst, Register tmp = noreg);
-  void load_reference_barrier(MacroAssembler* masm, Register dst, Register load_addr);
-  void load_reference_barrier_not_null(MacroAssembler* masm, Register dst, Register load_addr);
+  void load_reference_barrier(MacroAssembler* masm, Register dst, Address load_addr);
+  void load_reference_barrier_not_null(MacroAssembler* masm, Register dst, Address load_addr);
 
   address generate_shenandoah_lrb(StubCodeGenerator* cgen);
 
@@ -74,7 +74,7 @@ public:
 #endif
 
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
-                                  Register addr, Register count, RegSet saved_regs);
+                                  Register src, Register dst, Register count, RegSet saved_regs);
   virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                        Register dst, Address src, Register tmp1, Register tmp_thread);
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
