@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -426,7 +426,7 @@ void LIRGenerator::do_ArithmeticOp_FPU(ArithmeticOp* x) {
     tmp = new_register(T_DOUBLE);
   }
 
-  arithmetic_op_fpu(x->op(), reg, left.result(), right.result(), NULL);
+  arithmetic_op_fpu(x->op(), reg, left.result(), right.result(), x->is_strictfp());
 
   set_result(x, round_item(reg));
 }
