@@ -91,13 +91,13 @@ class Node_Stack;
 struct Final_Reshape_Counts;
 
 enum LoopOptsMode {
-  LoopOptsDefault = 0,
-  LoopOptsNone = 1,
-  LoopOptsSkipSplitIf = 2,
-  LoopOptsShenandoahExpand = 3,
-  LoopOptsShenandoahPostExpand = 4,
-  LoopOptsVerify = 5,
-  LoopOptsZgcLastRound = 6
+  LoopOptsDefault,
+  LoopOptsNone,
+  LoopOptsSkipSplitIf,
+  LoopOptsShenandoahExpand,
+  LoopOptsShenandoahPostExpand,
+  LoopOptsVerify,
+  LoopOptsLastRound
 };
 
 typedef unsigned int node_idx_t;
