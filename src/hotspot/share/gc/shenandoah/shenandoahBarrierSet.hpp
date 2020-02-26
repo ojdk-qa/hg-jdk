@@ -82,6 +82,7 @@ public:
   virtual void on_thread_detach(JavaThread* thread);
 
   static inline oop resolve_forwarded_not_null(oop p);
+  static inline oop resolve_forwarded_not_null_mutator(oop p);
   static inline oop resolve_forwarded(oop p);
 
   template <DecoratorSet decorators, typename T>

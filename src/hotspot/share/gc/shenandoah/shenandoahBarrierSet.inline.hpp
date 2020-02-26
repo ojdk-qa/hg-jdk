@@ -47,6 +47,10 @@ inline oop ShenandoahBarrierSet::resolve_forwarded(oop p) {
   }
 }
 
+inline oop ShenandoahBarrierSet::resolve_forwarded_not_null_mutator(oop p) {
+  return ShenandoahForwarding::get_forwardee_mutator(p);
+}
+
 inline void ShenandoahBarrierSet::enqueue(oop obj) {
   assert(_satb_mark_queue_set.is_active(), "only get here when SATB active");
 
