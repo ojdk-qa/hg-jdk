@@ -547,7 +547,6 @@ void ShenandoahTraversalGC::main_loop_work(T* cl, jushort* live_data, uint worke
     if (work == 0) {
       // No more work, try to terminate
       ShenandoahSuspendibleThreadSetLeaver stsl(sts_yield && ShenandoahSuspendibleWorkers);
-      ShenandoahTerminationTimingsTracker term_tracker(worker_id);
       ShenandoahTerminatorTerminator tt(_heap);
 
       if (terminator->offer_termination(&tt)) return;
@@ -567,7 +566,6 @@ void ShenandoahTraversalGC::concurrent_traversal_collection() {
   if (!_heap->cancelled_gc()) {
     uint nworkers = _heap->workers()->active_workers();
     task_queues()->reserve(nworkers);
-    ShenandoahTerminationTracker tracker(ShenandoahPhaseTimings::conc_traversal_termination);
 
     ShenandoahTaskTerminator terminator(nworkers, task_queues());
     ShenandoahConcurrentTraversalCollectionTask task(&terminator);
@@ -592,8 +590,6 @@ void ShenandoahTraversalGC::final_traversal_collection() {
 
     // Finish traversal
     ShenandoahAllRootScanner rp(nworkers, ShenandoahPhaseTimings::final_traversal_gc_work);
-    ShenandoahTerminationTracker term(ShenandoahPhaseTimings::final_traversal_gc_termination);
-
     ShenandoahTaskTerminator terminator(nworkers, task_queues());
     ShenandoahFinalTraversalCollectionTask task(&rp, &terminator);
     _heap->workers()->run_task(&task);
