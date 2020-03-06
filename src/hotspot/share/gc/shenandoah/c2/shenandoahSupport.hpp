@@ -230,10 +230,6 @@ public:
     ValueIn
   };
 
-  enum Strength {
-    NONE, STRONG
-  };
-
   ShenandoahLoadReferenceBarrierNode(Node* ctrl, Node* val);
 
   virtual int Opcode() const;
@@ -251,7 +247,7 @@ public:
     return sizeof(*this);
   }
 
-  Strength get_barrier_strength();
+  bool is_redundant();
   CallStaticJavaNode* pin_and_expand_null_check(PhaseIterGVN& igvn);
 
 private:
