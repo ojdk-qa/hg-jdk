@@ -27,8 +27,8 @@
 #include "classfile/stringTable.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
-#include "gc/shenandoah/shenandoahTimingTracker.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/safepoint.hpp"
 
@@ -55,8 +55,7 @@ void ShenandoahClassLoaderDataRoots<SINGLE_THREADED>::always_strong_cld_do(CLDCl
     assert(Thread::current()->is_VM_thread(), "Single threaded CLDG iteration can only be done by VM thread");
     ClassLoaderDataGraph::always_strong_cld_do(clds);
   } else {
-   ShenandoahWorkerTimings* worker_times = ShenandoahHeap::heap()->phase_timings()->worker_times();
-   ShenandoahWorkerTimingsTracker timer(worker_times, ShenandoahPhaseTimings::CLDGRoots, worker_id);
+   ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::CLDGRoots, worker_id);
    ClassLoaderDataGraph::always_strong_cld_do(clds);
   }
 }
@@ -68,8 +67,7 @@ void ShenandoahClassLoaderDataRoots<SINGLE_THREADED>::cld_do(CLDClosure* clds, u
     assert(Thread::current()->is_VM_thread(), "Single threaded CLDG iteration can only be done by VM thread");
     ClassLoaderDataGraph::cld_do(clds);
   } else {
-    ShenandoahWorkerTimings* worker_times = ShenandoahHeap::heap()->phase_timings()->worker_times();
-    ShenandoahWorkerTimingsTracker timer(worker_times, ShenandoahPhaseTimings::CLDGRoots, worker_id);
+    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::CLDGRoots, worker_id);
     ClassLoaderDataGraph::cld_do(clds);
   }
 }
@@ -81,8 +79,7 @@ ShenandoahCodeCacheRoots<ITR>::ShenandoahCodeCacheRoots() {
 
 template <typename ITR>
 void ShenandoahCodeCacheRoots<ITR>::code_blobs_do(CodeBlobClosure* blob_cl, uint worker_id) {
-  ShenandoahWorkerTimings* worker_times = ShenandoahHeap::heap()->phase_timings()->worker_times();
-  ShenandoahWorkerTimingsTracker timer(worker_times, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
+  ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
   _coderoots_iterator.possibly_parallel_blobs_do(blob_cl);
 }
 
