@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workgroup.hpp"
@@ -124,9 +125,9 @@ class ShenandoahRootProcessor : public StackObj {
 private:
   ShenandoahHeap* const               _heap;
   const ShenandoahPhaseTimings::Phase _phase;
+  const ShenandoahGCWorkerPhase       _worker_phase;
 public:
   ShenandoahRootProcessor(ShenandoahPhaseTimings::Phase phase);
-  ~ShenandoahRootProcessor();
 
   ShenandoahHeap* heap() const { return _heap; }
 };
