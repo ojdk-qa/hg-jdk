@@ -30,7 +30,6 @@
 #include "gc/shared/parallelCleaning.hpp"
 #include "gc/shared/plab.hpp"
 
-#include "gc/shenandoah/shenandoahAllocTracker.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"

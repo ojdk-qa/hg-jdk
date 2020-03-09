@@ -36,7 +36,6 @@
 
 class ConcurrentGCTimer;
 class ReferenceProcessor;
-class ShenandoahAllocTracker;
 class ShenandoahCollectorPolicy;
 class ShenandoahControlThread;
 class ShenandoahGCSession;
