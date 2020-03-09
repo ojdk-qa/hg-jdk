@@ -136,6 +136,10 @@ void ShenandoahObjToScanQueueSet::reset_taskqueue_stats() {
 }
 #endif // TASKQUEUE_STATS
 
+bool ShenandoahTerminatorTerminator::should_exit_termination() {
+  return _heap->cancelled_gc();
+}
+
 bool ShenandoahTaskTerminator::do_spin_master_work(ShenandoahTerminatorTerminator* terminator) {
   uint yield_count = 0;
   // Number of hard spin loops done since last yield
