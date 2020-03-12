@@ -115,6 +115,7 @@ private:
 
   oop load_reference_barrier_impl(oop obj);
 
+  inline bool skip_bulk_update(HeapWord* dst);
 public:
   // Callbacks for runtime accesses.
   template <DecoratorSet decorators, typename BarrierSetT = ShenandoahBarrierSet>
