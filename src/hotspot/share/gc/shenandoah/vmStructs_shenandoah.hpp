@@ -39,7 +39,7 @@
                             declare_toplevel_type,                            \
                             declare_integer_type)                             \
   declare_type(ShenandoahHeap, CollectedHeap)                                 \
-  declare_type(ShenandoahHeapRegion, ContiguousSpace)                         \
+  declare_toplevel_type(ShenandoahHeapRegion)                                 \
   declare_toplevel_type(ShenandoahHeap*)                                      \
   declare_toplevel_type(ShenandoahHeapRegion*)                                \
 

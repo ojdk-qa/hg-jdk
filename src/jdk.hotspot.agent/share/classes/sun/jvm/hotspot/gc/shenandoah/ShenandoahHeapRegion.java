@@ -23,9 +23,9 @@
 
 package sun.jvm.hotspot.gc.shenandoah;
 
-import sun.jvm.hotspot.gc.shared.ContiguousSpace;
 import sun.jvm.hotspot.types.CIntegerField;
 import sun.jvm.hotspot.runtime.VM;
+import sun.jvm.hotspot.runtime.VMObject;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
 import sun.jvm.hotspot.debugger.Address;
@@ -33,8 +33,7 @@ import sun.jvm.hotspot.debugger.Address;
 import java.util.Observable;
 import java.util.Observer;
 
-
-public class ShenandoahHeapRegion extends ContiguousSpace {
+public class ShenandoahHeapRegion extends VMObject {
     private static CIntegerField RegionSizeBytes;
     static {
         VM.registerVMInitializedObserver(new Observer() {
