@@ -25,7 +25,7 @@
 #include "c1/c1_IR.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueue.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
