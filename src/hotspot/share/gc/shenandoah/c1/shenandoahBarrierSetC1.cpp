@@ -255,8 +255,8 @@ void ShenandoahBarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result)
     BarrierSetC1::load_at_resolved(access, result);
   }
 
-  // 3: apply keep-alive barrier if ShenandoahKeepAliveBarrier is set
-  if (ShenandoahKeepAliveBarrier) {
+  // 3: apply keep-alive barrier if ShenandoahSATBBarrier is set
+  if (ShenandoahSATBBarrier) {
     DecoratorSet decorators = access.decorators();
     bool is_weak = (decorators & ON_WEAK_OOP_REF) != 0;
     bool is_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
