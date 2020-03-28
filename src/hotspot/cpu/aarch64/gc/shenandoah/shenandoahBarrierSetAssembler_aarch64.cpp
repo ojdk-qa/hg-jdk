@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -341,6 +341,7 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
   // 3: apply keep-alive barrier if needed
   if (ShenandoahBarrierSet::need_keep_alive_barrier(decorators, type)) {
     __ enter();
+    __ push_call_clobbered_registers();
     satb_write_barrier_pre(masm /* masm */,
                            noreg /* obj */,
                            dst /* pre_val */,
@@ -348,6 +349,7 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
                            tmp1 /* tmp */,
                            true /* tosca_live */,
                            true /* expand_call */);
+    __ pop_call_clobbered_registers();
     __ leave();
   }
 }
