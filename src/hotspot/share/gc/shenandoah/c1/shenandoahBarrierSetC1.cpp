@@ -133,9 +133,7 @@ LIR_Opr ShenandoahBarrierSetC1::load_reference_barrier_impl(LIRGenerator* gen, L
   // Read and check the gc-state-flag.
   LIR_Opr flag_val = gen->new_register(T_INT);
   __ load(active_flag_addr, flag_val);
-  LIR_Opr mask = LIR_OprFact::intConst(ShenandoahHeap::HAS_FORWARDED |
-                                       ShenandoahHeap::EVACUATION |
-                                       ShenandoahHeap::TRAVERSAL);
+  LIR_Opr mask = LIR_OprFact::intConst(ShenandoahHeap::HAS_FORWARDED);
   LIR_Opr mask_reg = gen->new_register(T_INT);
   __ move(mask, mask_reg);
 

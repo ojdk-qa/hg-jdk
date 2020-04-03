@@ -40,8 +40,7 @@
  *                    CMSCondMark,
  *                    Serial,
  *                    Parallel,
- *                    Shenandoah,
- *                    ShenandoahTraversal}
+ *                    Shenandoah}
  */
 
 
@@ -106,14 +105,7 @@ public class TestVolatiles {
             argcount = 8;
             procArgs = new String[argcount];
             procArgs[argcount - 2] = "-XX:+UseShenandoahGC";
-            break;
-        case "ShenandoahTraversal":
-            argcount = 10;
-            procArgs = new String[argcount];
-            procArgs[argcount - 4] = "-XX:+UseShenandoahGC";
-            procArgs[argcount - 3] = "-XX:+UnlockExperimentalVMOptions";
-            procArgs[argcount - 2] = "-XX:ShenandoahGCMode=traversal";
-            break;
+            break;        
         default:
             throw new RuntimeException("unexpected test type " + testType);
         }
@@ -370,7 +362,6 @@ public class TestVolatiles {
                 };
                 break;
             case "Shenandoah":
-            case "ShenandoahTraversal":
                  // Shenandoah generates normal object graphs for
                  // volatile stores
                 matches = new String[] {
@@ -445,7 +436,6 @@ public class TestVolatiles {
                 break;
 
             case "Shenandoah":
-            case "ShenandoahTraversal":
                  // Shenandoah generates normal object graphs for
                  // volatile stores
                 matches = new String[] {
@@ -560,7 +550,6 @@ public class TestVolatiles {
                 };
                 break;
             case "Shenandoah":
-            case "ShenandoahTraversal":
                 // For volatile CAS, Shenanodoah generates normal
                 // graphs with a shenandoah-specific cmpxchg
                 matches = new String[] {
@@ -815,7 +804,6 @@ public class TestVolatiles {
                 };
                 break;
             case "Shenandoah":
-            case "ShenandoahTraversal":
                 // For volatile CAS, Shenanodoah generates normal
                 // graphs with a shenandoah-specific cmpxchg
                 matches = new String[] {

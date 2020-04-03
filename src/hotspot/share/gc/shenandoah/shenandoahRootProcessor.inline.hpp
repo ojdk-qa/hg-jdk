@@ -127,21 +127,16 @@ void ShenandoahRootScanner<ITR>::strong_roots_do(uint worker_id, OopClosure* oop
 
 template <typename ITR>
 void ShenandoahRootScanner<ITR>::roots_do(uint worker_id, OopClosure* oops, CLDClosure* clds, CodeBlobClosure* code, ThreadClosure *tc) {
-  assert(!ShenandoahHeap::heap()->unload_classes() ||
-          ShenandoahHeap::heap()->is_traversal_mode(),
-          "No class unloading or traversal GC");
+  assert(!ShenandoahHeap::heap()->unload_classes(),
+          "Expect class unloading when Shenandoah cycle is running");
   ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);
   ResourceMark rm;
 
   _serial_roots.oops_do(oops, worker_id);
   _jni_roots.oops_do(oops, worker_id);
 
-  if (clds != NULL) {
-    _cld_roots.cld_do(clds, worker_id);
-  } else {
-    assert(ShenandoahHeap::heap()->is_concurrent_traversal_in_progress(), "Only possible with traversal GC");
-  }
-
+  assert(clds != NULL, "Only possible with CLD closure");
+  _cld_roots.cld_do(clds, worker_id);
   _thread_roots.threads_do(&tc_cl, worker_id);
 
   // With ShenandoahConcurrentScanCodeRoots, we avoid scanning the entire code cache here,
