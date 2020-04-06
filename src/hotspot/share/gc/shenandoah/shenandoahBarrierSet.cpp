@@ -181,7 +181,7 @@ void ShenandoahBarrierSet::on_thread_detach(JavaThread* thread) {
 }
 
 void ShenandoahBarrierSet::clone_barrier_runtime(oop src) {
-  if (_heap->has_forwarded_objects()) {
+  if (_heap->has_forwarded_objects() || (ShenandoahStoreValEnqueueBarrier && _heap->is_concurrent_mark_in_progress())) {
     clone_barrier(src);
   }
 }

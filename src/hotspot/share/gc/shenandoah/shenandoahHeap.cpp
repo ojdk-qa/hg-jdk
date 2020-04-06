@@ -41,6 +41,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
+#include "gc/shenandoah/shenandoahIUMode.hpp"
 #include "gc/shenandoah/shenandoahMarkCompact.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahMemoryPool.hpp"
@@ -390,6 +391,8 @@ void ShenandoahHeap::initialize_heuristics() {
   if (ShenandoahGCMode != NULL) {
     if (strcmp(ShenandoahGCMode, "normal") == 0) {
       _gc_mode = new ShenandoahNormalMode();
+    } else if (strcmp(ShenandoahGCMode, "iu") == 0) {
+      _gc_mode = new ShenandoahIUMode();
     } else if (strcmp(ShenandoahGCMode, "passive") == 0) {
       _gc_mode = new ShenandoahPassiveMode();
     } else {

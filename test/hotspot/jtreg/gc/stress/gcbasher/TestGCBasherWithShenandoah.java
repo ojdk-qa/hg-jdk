@@ -89,6 +89,48 @@ import java.io.IOException;
  *      TestGCBasherWithShenandoah 120000
  */
 
+/*
+ * @test TestGCBasherWithShenandoah
+ * @key gc
+ * @key stress
+ * @library /
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.flavor == "server" & !vm.emulatedClient & !vm.graal.enabled
+ * @summary Stress the Shenandoah GC by trying to make old objects more likely to be garbage than young objects.
+ *
+ * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahOOMDuringEvacALot
+ *      TestGCBasherWithShenandoah 120000
+ *
+ * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahAllocFailureALot
+ *      TestGCBasherWithShenandoah 120000
+ *
+ * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
+ *      TestGCBasherWithShenandoah 120000
+ */
+
+/*
+ * @test TestGCBasherWithShenandoah
+ * @key gc
+ * @key stress
+ * @library /
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.flavor == "server" & !vm.emulatedClient & !vm.graal.enabled
+ * @summary Stress the Shenandoah GC by trying to make old objects more likely to be garbage than young objects.
+ *
+ * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
+ *      -XX:+ShenandoahVerify
+ *      TestGCBasherWithShenandoah 120000
+ *
+ * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
+ *      TestGCBasherWithShenandoah 120000
+ */
 public class TestGCBasherWithShenandoah {
     public static void main(String[] args) throws IOException {
         TestGCBasher.main(args);
