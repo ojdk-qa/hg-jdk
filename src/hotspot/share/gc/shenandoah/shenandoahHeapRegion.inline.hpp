@@ -88,4 +88,29 @@ inline void ShenandoahHeapRegion::internal_increase_live_data(size_t s) {
 #endif
 }
 
+inline void ShenandoahHeapRegion::clear_live_data() {
+  OrderAccess::release_store_fence<size_t>(&_live_data, 0);
+}
+
+inline size_t ShenandoahHeapRegion::get_live_data_words() const {
+  return OrderAccess::load_acquire(&_live_data);
+}
+
+inline size_t ShenandoahHeapRegion::get_live_data_bytes() const {
+  return get_live_data_words() * HeapWordSize;
+}
+
+inline bool ShenandoahHeapRegion::has_live() const {
+  return get_live_data_words() != 0;
+}
+
+inline size_t ShenandoahHeapRegion::garbage() const {
+  assert(used() >= get_live_data_bytes(),
+         "Live Data must be a subset of used() live: " SIZE_FORMAT " used: " SIZE_FORMAT,
+         get_live_data_bytes(), used());
+
+  size_t result = used() - get_live_data_bytes();
+  return result;
+}
+
 #endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP
