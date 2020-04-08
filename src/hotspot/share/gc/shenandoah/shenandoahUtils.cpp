@@ -85,10 +85,6 @@ ShenandoahGCPauseMark::ShenandoahGCPauseMark(uint gc_id, SvcGCMarker::reason_typ
   );
 }
 
-ShenandoahGCPauseMark::~ShenandoahGCPauseMark() {
-
-}
-
 ShenandoahPausePhase::ShenandoahPausePhase(const char* title) :
         GCTraceTimeImplWrapper<LogLevel::Info, LOG_TAGS(gc)>(title),
         _timer(ShenandoahHeap::heap()->gc_timer()) {
