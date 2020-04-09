@@ -52,8 +52,9 @@ public:
   ~ShenandoahGCSession();
 };
 
-class ShenandoahPausePhase : public GCTraceTimeImplWrapper<LogLevel::Info, LOG_TAGS(gc)> {
+class ShenandoahPausePhase : public StackObj {
 private:
+  GCTraceTimeImplWrapper<LogLevel::Info, LOG_TAGS(gc)> _tracer;
   ConcurrentGCTimer* const _timer;
 
 public:
@@ -61,12 +62,13 @@ public:
   ~ShenandoahPausePhase();
 };
 
-class ShenandoahConcurrentPhase : public GCTraceConcTimeImpl<LogLevel::Info, LOG_TAGS(gc)> {
+class ShenandoahConcurrentPhase : public StackObj {
 private:
+  GCTraceTimeImplWrapper<LogLevel::Info, LOG_TAGS(gc)> _tracer;
   ConcurrentGCTimer* const _timer;
 
 public:
-  ShenandoahConcurrentPhase(const char* title);
+  ShenandoahConcurrentPhase(const char* title, bool log_heap_usage = false);
   ~ShenandoahConcurrentPhase();
 };
 
