@@ -2192,10 +2192,7 @@ void ShenandoahHeap::op_init_updaterefs() {
 
   set_update_refs_in_progress(true);
 
-  {
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_refs_prepare);
-    _update_refs_iterator.reset();
-  }
+  _update_refs_iterator.reset();
 
   if (ShenandoahPacing) {
     pacer()->setup_for_updaterefs();
