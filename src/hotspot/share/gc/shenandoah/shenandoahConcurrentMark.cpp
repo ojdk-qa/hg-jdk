@@ -316,7 +316,8 @@ void ShenandoahConcurrentMark::update_roots(ShenandoahPhaseTimings::Phase root_p
     case ShenandoahPhaseTimings::final_update_refs_roots:
       update_code_cache = false;
       break;
-    case ShenandoahPhaseTimings::full_gc_roots:
+    case ShenandoahPhaseTimings::full_gc_update_roots:
+    case ShenandoahPhaseTimings::full_gc_adjust_roots:
     case ShenandoahPhaseTimings::degen_gc_update_roots:
       update_code_cache = true;
       break;
@@ -418,8 +419,6 @@ void ShenandoahConcurrentMark::concurrent_scan_code_roots(uint worker_id, Refere
 void ShenandoahConcurrentMark::mark_from_roots() {
   WorkGang* workers = _heap->workers();
   uint nworkers = workers->active_workers();
-
-  ShenandoahGCPhase conc_mark_phase(ShenandoahPhaseTimings::conc_mark);
 
   if (_heap->process_references()) {
     ReferenceProcessor* rp = _heap->ref_processor();

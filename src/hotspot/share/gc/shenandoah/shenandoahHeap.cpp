@@ -1911,20 +1911,14 @@ void ShenandoahHeap::stop() {
 
 void ShenandoahHeap::stw_unload_classes(bool full_gc) {
   if (!unload_classes()) return;
-  bool purged_class;
 
   // Unload classes and purge SystemDictionary.
   {
     ShenandoahGCSubPhase phase(full_gc ?
                                ShenandoahPhaseTimings::full_gc_purge_class_unload :
                                ShenandoahPhaseTimings::purge_class_unload);
-    purged_class = SystemDictionary::do_unloading(gc_timer());
-  }
+    bool purged_class = SystemDictionary::do_unloading(gc_timer());
 
-  {
-    ShenandoahGCSubPhase phase(full_gc ?
-                               ShenandoahPhaseTimings::full_gc_purge_par :
-                               ShenandoahPhaseTimings::purge_par);
     ShenandoahIsAliveSelector is_alive;
     uint num_workers = _workers->active_workers();
     ParallelCleaningTask unlink_task(is_alive.is_alive_closure(), true, true, num_workers, purged_class);
@@ -1952,8 +1946,8 @@ void ShenandoahHeap::stw_process_weak_roots(bool full_gc) {
                                   ShenandoahPhaseTimings::purge);
   uint num_workers = _workers->active_workers();
   ShenandoahPhaseTimings::Phase timing_phase = full_gc ?
-                                               ShenandoahPhaseTimings::full_gc_purge_par :
-                                               ShenandoahPhaseTimings::purge_par;
+                                               ShenandoahPhaseTimings::full_gc_purge_weak_par :
+                                               ShenandoahPhaseTimings::purge_weak_par;
   ShenandoahGCSubPhase phase(timing_phase);
 
   // Cleanup weak roots
