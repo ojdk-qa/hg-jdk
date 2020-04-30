@@ -1955,17 +1955,17 @@ void ShenandoahHeap::stw_process_weak_roots(bool full_gc) {
     ShenandoahForwardedIsAliveClosure is_alive;
     ShenandoahUpdateRefsClosure keep_alive;
     ShenandoahParallelWeakRootsCleaningTask<ShenandoahForwardedIsAliveClosure, ShenandoahUpdateRefsClosure>
-      cleaning_task(&is_alive, &keep_alive, num_workers);
+      cleaning_task(timing_phase, &is_alive, &keep_alive, num_workers);
     _workers->run_task(&cleaning_task);
   } else {
     ShenandoahIsAliveClosure is_alive;
 #ifdef ASSERT
   ShenandoahAssertNotForwardedClosure verify_cl;
   ShenandoahParallelWeakRootsCleaningTask<ShenandoahIsAliveClosure, ShenandoahAssertNotForwardedClosure>
-    cleaning_task(&is_alive, &verify_cl, num_workers);
+    cleaning_task(timing_phase, &is_alive, &verify_cl, num_workers);
 #else
   ShenandoahParallelWeakRootsCleaningTask<ShenandoahIsAliveClosure, DoNothingClosure>
-    cleaning_task(&is_alive, &do_nothing_cl, num_workers);
+    cleaning_task(timing_phase, &is_alive, &do_nothing_cl, num_workers);
 #endif
     _workers->run_task(&cleaning_task);
   }

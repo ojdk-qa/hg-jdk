@@ -179,12 +179,12 @@ private:
   double              _cycle_data[_num_phases];
   HdrSeq              _global_data[_num_phases];
   static const char*  _phase_names[_num_phases];
-  Phase                 _current_worker_phase;
+
   ShenandoahWorkerData* _worker_data[_num_phases];
   ShenandoahCollectorPolicy* _policy;
 
   static bool is_worker_phase(Phase phase);
-  Phase current_worker_phase() { return _current_worker_phase; }
+  static bool is_root_work_phase(Phase phase);
 
   ShenandoahWorkerData* worker_data(Phase phase, ParPhase par_phase);
   Phase worker_par_phase(Phase phase, ParPhase par_phase);
@@ -220,7 +220,7 @@ private:
 
   double _start_time;
 public:
-  ShenandoahWorkerTimingsTracker(ShenandoahPhaseTimings::ParPhase par_phase, uint worker_id);
+  ShenandoahWorkerTimingsTracker(ShenandoahPhaseTimings::Phase phase, ShenandoahPhaseTimings::ParPhase par_phase, uint worker_id);
   ~ShenandoahWorkerTimingsTracker();
 };
 

@@ -43,7 +43,8 @@ void ShenandoahWeakRoots::oops_do(IsAlive* is_alive, KeepAlive* keep_alive, uint
 }
 
 template <bool SINGLE_THREADED>
-ShenandoahClassLoaderDataRoots<SINGLE_THREADED>::ShenandoahClassLoaderDataRoots() {
+ShenandoahClassLoaderDataRoots<SINGLE_THREADED>::ShenandoahClassLoaderDataRoots(ShenandoahPhaseTimings::Phase phase) :
+  _phase(phase) {
   if (!SINGLE_THREADED) {
     ClassLoaderDataGraph::clear_claimed_marks();
   }
@@ -56,7 +57,7 @@ void ShenandoahClassLoaderDataRoots<SINGLE_THREADED>::always_strong_cld_do(CLDCl
     assert(Thread::current()->is_VM_thread(), "Single threaded CLDG iteration can only be done by VM thread");
     ClassLoaderDataGraph::always_strong_cld_do(clds);
   } else {
-   ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::CLDGRoots, worker_id);
+   ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
    ClassLoaderDataGraph::always_strong_cld_do(clds);
   }
 }
@@ -68,19 +69,19 @@ void ShenandoahClassLoaderDataRoots<SINGLE_THREADED>::cld_do(CLDClosure* clds, u
     assert(Thread::current()->is_VM_thread(), "Single threaded CLDG iteration can only be done by VM thread");
     ClassLoaderDataGraph::cld_do(clds);
   } else {
-    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::CLDGRoots, worker_id);
+    ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
     ClassLoaderDataGraph::cld_do(clds);
   }
 }
 
 template <typename ITR>
-ShenandoahCodeCacheRoots<ITR>::ShenandoahCodeCacheRoots() {
+ShenandoahCodeCacheRoots<ITR>::ShenandoahCodeCacheRoots(ShenandoahPhaseTimings::Phase phase) : _phase(phase) {
   nmethod::oops_do_marking_prologue();
 }
 
 template <typename ITR>
 void ShenandoahCodeCacheRoots<ITR>::code_blobs_do(CodeBlobClosure* blob_cl, uint worker_id) {
-  ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
+  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
   _coderoots_iterator.possibly_parallel_blobs_do(blob_cl);
 }
 
@@ -109,7 +110,12 @@ public:
 template <typename ITR>
 ShenandoahRootScanner<ITR>::ShenandoahRootScanner(uint n_workers, ShenandoahPhaseTimings::Phase phase) :
   ShenandoahRootProcessor(phase),
-  _thread_roots(n_workers > 1) {
+  _serial_roots(phase),
+  _thread_roots(phase, n_workers > 1),
+  _code_roots(phase),
+  _jni_roots(phase),
+  _dedup_roots(phase),
+  _cld_roots(phase) {
 }
 
 template <typename ITR>

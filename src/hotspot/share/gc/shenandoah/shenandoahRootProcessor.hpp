@@ -42,10 +42,12 @@ public:
 private:
   ShenandoahSharedFlag                   _claimed;
   const OopsDo                           _oops_do;
+  const ShenandoahPhaseTimings::Phase    _phase;
   const ShenandoahPhaseTimings::ParPhase _par_phase;
 
 public:
-  ShenandoahSerialRoot(OopsDo oops_do, ShenandoahPhaseTimings::ParPhase par_phase);
+  ShenandoahSerialRoot(OopsDo oops_do,
+          ShenandoahPhaseTimings::Phase phase, ShenandoahPhaseTimings::ParPhase par_phase);
   void oops_do(OopClosure* cl, uint worker_id);
 };
 
@@ -61,20 +63,21 @@ private:
   static void universe_oops_do(OopClosure* cl) { Universe::oops_do(cl); }
 
 public:
-  ShenandoahSerialRoots();
+  ShenandoahSerialRoots(ShenandoahPhaseTimings::Phase phase);
   void oops_do(OopClosure* cl, uint worker_id);
 };
 
 class ShenandoahJNIHandleRoots : public ShenandoahSerialRoot {
 public:
-  ShenandoahJNIHandleRoots();
+  ShenandoahJNIHandleRoots(ShenandoahPhaseTimings::Phase phase);
 };
 
 class ShenandoahThreadRoots {
 private:
+  ShenandoahPhaseTimings::Phase _phase;
   const bool _is_par;
 public:
-  ShenandoahThreadRoots(bool is_par);
+  ShenandoahThreadRoots(ShenandoahPhaseTimings::Phase phase, bool is_par);
   ~ShenandoahThreadRoots();
 
   void oops_do(OopClosure* oops_cl, CodeBlobClosure* code_cl, uint worker_id);
@@ -82,11 +85,12 @@ public:
 };
 
 class ShenandoahWeakRoots {
+  ShenandoahPhaseTimings::Phase      _phase;
   OopStorage::ParState<false, false> _par_state_string;
   volatile bool                      _claimed;
 
 public:
-  ShenandoahWeakRoots(uint n_workers);
+  ShenandoahWeakRoots(ShenandoahPhaseTimings::Phase phase, uint n_workers);
   ~ShenandoahWeakRoots();
 
   template <typename IsAlive, typename KeepAlive>
@@ -94,8 +98,10 @@ public:
 };
 
 class ShenandoahStringDedupRoots {
+private:
+  ShenandoahPhaseTimings::Phase _phase;
 public:
-  ShenandoahStringDedupRoots();
+  ShenandoahStringDedupRoots(ShenandoahPhaseTimings::Phase phase);
   ~ShenandoahStringDedupRoots();
 
   void oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, uint worker_id);
@@ -104,9 +110,10 @@ public:
 template <typename ITR>
 class ShenandoahCodeCacheRoots {
 private:
+  ShenandoahPhaseTimings::Phase _phase;
   ITR _coderoots_iterator;
 public:
-  ShenandoahCodeCacheRoots();
+  ShenandoahCodeCacheRoots(ShenandoahPhaseTimings::Phase phase);
   ~ShenandoahCodeCacheRoots();
 
   void code_blobs_do(CodeBlobClosure* blob_cl, uint worker_id);
@@ -114,8 +121,10 @@ public:
 
 template <bool SINGLE_THREADED>
 class ShenandoahClassLoaderDataRoots {
+private:
+  ShenandoahPhaseTimings::Phase _phase;
 public:
-  ShenandoahClassLoaderDataRoots();
+  ShenandoahClassLoaderDataRoots(ShenandoahPhaseTimings::Phase phase);
 
   void always_strong_cld_do(CLDClosure* clds, uint worker_id);
   void cld_do(CLDClosure* clds, uint worker_id);
