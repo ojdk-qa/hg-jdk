@@ -186,52 +186,12 @@ void ShenandoahBarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value)
   BarrierSetC1::store_at_resolved(access, value);
 }
 
-// TODO: This is here temporarily until backport of JDK-8217717 arrives.
-#ifndef PATCHED_ADDR
-#define PATCHED_ADDR  (max_jint)
-#endif
-static LIR_Opr resolve_address_super(LIRAccess& access, bool resolve_in_register) {
-  DecoratorSet decorators = access.decorators();
-  bool is_array = (decorators & IS_ARRAY) != 0;
-  bool needs_patching = (decorators & C1_NEEDS_PATCHING) != 0;
-
-  LIRItem& base = access.base().item();
-  LIR_Opr offset = access.offset().opr();
-  LIRGenerator *gen = access.gen();
-
-  LIR_Opr addr_opr;
-  if (is_array) {
-    addr_opr = LIR_OprFact::address(gen->emit_array_address(base.result(), offset, access.type()));
-  } else if (needs_patching) {
-    // we need to patch the offset in the instruction so don't allow
-    // generate_address to try to be smart about emitting the -1.
-    // Otherwise the patching code won't know how to find the
-    // instruction to patch.
-    addr_opr = LIR_OprFact::address(new LIR_Address(base.result(), PATCHED_ADDR, access.type()));
-  } else {
-    addr_opr = LIR_OprFact::address(gen->generate_address(base.result(), offset, 0, 0, access.type()));
-  }
-
-  if (resolve_in_register) {
-    LIR_Opr resolved_addr = gen->new_pointer_register();
-    if (needs_patching) {
-      __ leal(addr_opr, resolved_addr, lir_patch_normal, access.patch_emit_info());
-      access.clear_decorators(C1_NEEDS_PATCHING);
-    } else {
-      __ leal(addr_opr, resolved_addr);
-    }
-    return LIR_OprFact::address(new LIR_Address(resolved_addr, access.type()));
-  } else {
-    return addr_opr;
-  }
-}
-
 LIR_Opr ShenandoahBarrierSetC1::resolve_address(LIRAccess& access, bool resolve_in_register) {
   // We must resolve in register when patching. This is to avoid
   // having a patch area in the load barrier stub, since the call
   // into the runtime to patch will not have the proper oop map.
   const bool patch_before_barrier = access.is_oop() && (access.decorators() & C1_NEEDS_PATCHING) != 0;
-  return resolve_address_super(access, resolve_in_register || patch_before_barrier);
+  return BarrierSetC1::resolve_address(access, resolve_in_register || patch_before_barrier);
 }
 
 void ShenandoahBarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result) {
