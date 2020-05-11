@@ -25,11 +25,11 @@
 #include "gc/shenandoah/heuristics/shenandoahAggressiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
-#include "gc/shenandoah/mode/shenandoahNormalMode.hpp"
+#include "gc/shenandoah/mode/shenandoahSATBMode.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 
-void ShenandoahNormalMode::initialize_flags() const {
+void ShenandoahSATBMode::initialize_flags() const {
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
 
@@ -41,7 +41,7 @@ void ShenandoahNormalMode::initialize_flags() const {
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCloneBarrier);
 }
 
-ShenandoahHeuristics* ShenandoahNormalMode::initialize_heuristics() const {
+ShenandoahHeuristics* ShenandoahSATBMode::initialize_heuristics() const {
   if (ShenandoahGCHeuristics != NULL) {
     if (strcmp(ShenandoahGCHeuristics, "aggressive") == 0) {
       return new ShenandoahAggressiveHeuristics();
