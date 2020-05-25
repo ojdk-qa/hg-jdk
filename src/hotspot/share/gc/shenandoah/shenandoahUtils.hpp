@@ -191,4 +191,9 @@ public:
   }
 };
 
+class ShenandoahUtils {
+public:
+  static size_t round_up_power_of_2(size_t value);
+};
+
 #endif // SHARE_VM_GC_SHENANDOAHUTILS_HPP
