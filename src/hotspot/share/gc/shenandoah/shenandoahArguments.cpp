@@ -142,14 +142,6 @@ void ShenandoahArguments::initialize() {
 #endif // ASSERT
 #endif // COMPILER2
 
-  if (AlwaysPreTouch) {
-    // Shenandoah handles pre-touch on its own. It does not let the
-    // generic storage code to do the pre-touch before Shenandoah has
-    // a chance to do it on its own.
-    FLAG_SET_DEFAULT(AlwaysPreTouch, false);
-    FLAG_SET_DEFAULT(ShenandoahAlwaysPreTouch, true);
-  }
-
   // Shenandoah C2 optimizations apparently dislike the shape of thread-local handshakes.
   // Disable it by default, unless we enable it specifically for debugging.
   if (FLAG_IS_DEFAULT(ThreadLocalHandshakes)) {
@@ -167,7 +159,7 @@ void ShenandoahArguments::initialize() {
     FLAG_SET_DEFAULT(LogEventsBufferEntries, 250);
   }
 
-  if (ShenandoahAlwaysPreTouch) {
+  if (AlwaysPreTouch) {
     if (!FLAG_IS_DEFAULT(ShenandoahUncommit)) {
       warning("AlwaysPreTouch is enabled, disabling ShenandoahUncommit");
     }

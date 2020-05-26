@@ -143,7 +143,7 @@ jint ShenandoahHeap::initialize() {
 
   size_t reg_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
-  if (ShenandoahAlwaysPreTouch) {
+  if (AlwaysPreTouch) {
     // Enabled pre-touch means the entire heap is committed right away.
     init_byte_size = max_byte_size;
   }
@@ -306,9 +306,7 @@ jint ShenandoahHeap::initialize() {
     _free_set->rebuild();
   }
 
-  if (ShenandoahAlwaysPreTouch) {
-    assert(!AlwaysPreTouch, "Should have been overridden");
-
+  if (AlwaysPreTouch) {
     // For NUMA, it is important to pre-touch the storage under bitmaps with worker threads,
     // before initialize() below zeroes it with initializing thread. For any given region,
     // we touch the region and the corresponding bitmaps from the same thread.
