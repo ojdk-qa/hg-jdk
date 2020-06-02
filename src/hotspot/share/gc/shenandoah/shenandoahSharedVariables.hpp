@@ -244,4 +244,38 @@ private:
 
 };
 
+typedef struct ShenandoahSharedSemaphore {
+  shenandoah_padding(0);
+  volatile ShenandoahSharedValue value;
+  shenandoah_padding(1);
+
+  static uint max_tokens() {
+    return sizeof(ShenandoahSharedValue) * CHAR_MAX;
+  }
+
+  ShenandoahSharedSemaphore(uint tokens) {
+    assert(tokens <= max_tokens(), "sanity");
+    OrderAccess::release_store_fence(&value, (ShenandoahSharedValue)tokens);
+  }
+
+  bool try_acquire() {
+    while (true) {
+      ShenandoahSharedValue ov = OrderAccess::load_acquire(&value);
+      if (ov == 0) {
+        return false;
+      }
+      ShenandoahSharedValue nv = ov - 1;
+      if (Atomic::cmpxchg(nv, &value, ov) == ov) {
+        // successfully set
+        return true;
+      }
+    }
+  }
+
+  void claim_all() {
+    OrderAccess::release_store_fence(&value, (ShenandoahSharedValue)0);
+  }
+
+} ShenandoahSharedSemaphore;
+
 #endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHSHAREDFLAG_HPP
