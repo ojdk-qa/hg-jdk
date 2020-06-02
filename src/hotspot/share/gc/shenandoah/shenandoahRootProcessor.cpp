@@ -142,19 +142,21 @@ ShenandoahRootEvacuator::ShenandoahRootEvacuator(uint n_workers, ShenandoahPhase
 void ShenandoahRootEvacuator::roots_do(uint worker_id, OopClosure* oops) {
   MarkingCodeBlobClosure blobsCl(oops, CodeBlobToOopClosure::FixRelocations);
   CLDToOopClosure clds(oops);
-  CLDToOopClosure* weak_clds = ShenandoahHeap::heap()->unload_classes() ? NULL : &clds;
 
   AlwaysTrueClosure always_true;
 
+  // Process serial-claiming roots first
   _serial_roots.oops_do(oops, worker_id);
   _jni_roots.oops_do(oops, worker_id);
 
-  _thread_roots.oops_do(oops, NULL, worker_id);
-  _cld_roots.cld_do(&clds, worker_id);
-  _code_roots.code_blobs_do(&blobsCl, worker_id);
-
+  // Process light-weight/limited parallel roots then
   _weak_roots.oops_do<AlwaysTrueClosure, OopClosure>(&always_true, oops, worker_id);
   _dedup_roots.oops_do(&always_true, oops, worker_id);
+
+  // Process heavy-weight/fully parallel roots the last
+  _cld_roots.cld_do(&clds, worker_id);
+  _code_roots.code_blobs_do(&blobsCl, worker_id);
+  _thread_roots.oops_do(oops, NULL, worker_id);
 }
 
 ShenandoahRootUpdater::ShenandoahRootUpdater(uint n_workers, ShenandoahPhaseTimings::Phase phase, bool update_code_cache) :
@@ -186,15 +188,18 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
   CLDToOopClosure adjust_cld_closure(oops);
   AlwaysTrueClosure always_true;
 
+  // Process serial-claiming roots first
   _serial_roots.oops_do(oops, worker_id);
   _jni_roots.oops_do(oops, worker_id);
 
-  _thread_roots.oops_do(oops, NULL, worker_id);
-  _cld_roots.cld_do(&adjust_cld_closure, worker_id);
-  _code_roots.code_blobs_do(&adjust_code_closure, worker_id);
-
+  // Process light-weight/limited parallel roots then
   _weak_roots.oops_do<AlwaysTrueClosure, OopClosure>(&always_true, oops, worker_id);
   _dedup_roots.oops_do(&always_true, oops, worker_id);
+
+  // Process heavy-weight/fully parallel roots the last
+  _cld_roots.cld_do(&adjust_cld_closure, worker_id);
+  _code_roots.code_blobs_do(&adjust_code_closure, worker_id);
+  _thread_roots.oops_do(oops, NULL, worker_id);
 }
 
 ShenandoahHeapIterationRootScanner::ShenandoahHeapIterationRootScanner() :
@@ -217,12 +222,17 @@ ShenandoahHeapIterationRootScanner::ShenandoahHeapIterationRootScanner() :
    AlwaysTrueClosure always_true;
    ResourceMark rm;
 
+   // Process serial-claiming roots first
    _serial_roots.oops_do(oops, 0);
    _jni_roots.oops_do(oops, 0);
-   _cld_roots.cld_do(&clds, 0);
-   _thread_roots.threads_do(&tc_cl, 0);
-   _code_roots.code_blobs_do(&code, 0);
 
+   // Process light-weight/limited parallel roots then
    _weak_roots.oops_do<AlwaysTrueClosure, OopClosure>(&always_true, oops, 0);
    _dedup_roots.oops_do(&always_true, oops, 0);
+
+   // Process heavy-weight/fully parallel roots the last
+   _cld_roots.cld_do(&clds, 0);
+   _code_roots.code_blobs_do(&code, 0);
+   _thread_roots.threads_do(&tc_cl, 0);
+
  }
