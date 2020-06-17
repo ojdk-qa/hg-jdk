@@ -83,6 +83,16 @@ import java.io.IOException;
  * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
  *      TestGCBasherWithShenandoah 120000
+ */
+
+/*
+ * @test TestGCBasherWithShenandoah
+ * @key gc
+ * @key stress
+ * @library /
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.flavor == "server" & !vm.emulatedClient & !vm.graal.enabled
+ * @summary Stress the Shenandoah GC by trying to make old objects more likely to be garbage than young objects.
  *
  * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact

@@ -70,6 +70,14 @@
  * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
  *      TestGCOld 50 1 20 10 10000
+ */
+
+/*
+ * @test TestGCOldWithShenandoah
+ * @key gc
+ * @key stress
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @summary Stress the GC by trying to make old objects more likely to be garbage than young objects.
  *
  * @run main/othervm/timeout=600 -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
@@ -79,6 +87,14 @@
  * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
  *      TestGCOld 50 1 20 10 10000
+ */
+
+/*
+ * @test TestGCOldWithShenandoah
+ * @key gc
+ * @key stress
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @summary Stress the GC by trying to make old objects more likely to be garbage than young objects.
  *
  * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
@@ -106,6 +122,14 @@
  * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
  *      TestGCOld 50 1 20 10 10000
+ */
+
+/*
+ * @test TestGCOldWithShenandoah
+ * @key gc
+ * @key stress
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @summary Stress the GC by trying to make old objects more likely to be garbage than young objects.
  *
  * @run main/othervm/timeout=600 -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
