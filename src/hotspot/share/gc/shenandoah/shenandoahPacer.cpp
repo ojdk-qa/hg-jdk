@@ -191,7 +191,7 @@ void ShenandoahPacer::restart_with(size_t non_taxable_bytes, double tax_rate) {
   Atomic::inc(&_epoch);
 
   // Shake up stalled waiters after budget update.
-  notify_waiters();
+  _need_notify_waiters.try_set();
 }
 
 bool ShenandoahPacer::claim_for_alloc(size_t words, bool force) {
@@ -220,8 +220,8 @@ void ShenandoahPacer::unpace_for_alloc(intptr_t epoch, size_t words) {
     return;
   }
 
-  intptr_t tax = MAX2<intptr_t>(1, words * Atomic::load(&_tax_rate));
-  Atomic::add(tax, &_budget);
+  size_t tax = MAX2<size_t>(1, words * Atomic::load(&_tax_rate));
+  add_budget(tax);
 }
 
 intptr_t ShenandoahPacer::epoch() {
@@ -286,8 +286,10 @@ void ShenandoahPacer::wait(size_t time_ms) {
 }
 
 void ShenandoahPacer::notify_waiters() {
-  MonitorLockerEx locker(_wait_monitor);
-  _wait_monitor->notify_all();
+  if (_need_notify_waiters.try_unset()) {
+    MonitorLockerEx locker(_wait_monitor);
+    _wait_monitor->notify_all();
+  }
 }
 
 void ShenandoahPacer::print_on(outputStream* out) const {
