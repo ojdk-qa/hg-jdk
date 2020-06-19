@@ -42,10 +42,6 @@
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "utilities/vmError.hpp"
-#include "utilities/macros.hpp"
-#if INCLUDE_SHENANDOAHGC
-#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
-#endif
 
 // Portions of code courtesy of Clifford Click
 
@@ -1310,7 +1306,7 @@ static Node *is_x2logic( PhaseGVN *phase, PhiNode *phi, int true_path ) {
   } else return NULL;
 
   // Build int->bool concfgversion
-  Node *n = new Conv2BNode(cmp->in(1));
+  Node *n = new Conv2BNode( cmp->in(1) );
   if( flipped )
     n = new XorINode( phase->transform(n), phase->intcon(1) );
 
