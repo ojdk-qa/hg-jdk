@@ -24,8 +24,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHPARALLELCLEANING_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHPARALLELCLEANING_HPP
 
-#include "gc/shared/parallelCleaning.hpp"
 #include "gc/shared/workgroup.hpp"
+#include "gc/shenandoah/parallelCleaning.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "memory/iterator.hpp"
 

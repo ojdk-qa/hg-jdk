@@ -24,7 +24,7 @@
 #ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHMARKINGCONTEXT_HPP
 #define SHARE_VM_GC_SHENANDOAH_SHENANDOAHMARKINGCONTEXT_HPP
 
-#include "gc/shared/markBitMap.hpp"
+#include "gc/shenandoah/markBitMap.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"

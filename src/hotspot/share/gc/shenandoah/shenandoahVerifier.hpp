@@ -24,7 +24,7 @@
 #ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHVERIFIER_HPP
 #define SHARE_VM_GC_SHENANDOAH_SHENANDOAHVERIFIER_HPP
 
-#include "gc/shared/markBitMap.hpp"
+#include "gc/shenandoah/markBitMap.hpp"
 #include "gc/shenandoah/shenandoahRootVerifier.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"

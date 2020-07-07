@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_GC_SHARED_CMBITMAP_INLINE_HPP
 #define SHARE_VM_GC_SHARED_CMBITMAP_INLINE_HPP
 
-#include "gc/shared/markBitMap.hpp"
+#include "gc/shenandoah/markBitMap.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/align.hpp"
