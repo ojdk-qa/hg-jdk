@@ -88,6 +88,19 @@ public:
 
   virtual void barrier_stubs_init();
 
+#ifdef _LP64
+  void pin_critical_native_array(MacroAssembler* masm,
+                                 VMRegPair reg,
+                                 int& pinned_slot);
+  void unpin_critical_native_array(MacroAssembler* masm,
+                                   VMRegPair reg,
+                                   int& pinned_slot);
+#else
+  void gen_pin_object(MacroAssembler* masm,
+                      Register thread, VMRegPair reg);
+  void gen_unpin_object(MacroAssembler* masm,
+                        Register thread, VMRegPair reg);
+#endif
 };
 
 #endif // CPU_X86_GC_SHENANDOAH_SHENANDOAHBARRIERSETASSEMBLER_X86_HPP
