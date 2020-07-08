@@ -912,9 +912,12 @@ void ShenandoahBarrierSetC2::shenandoah_eliminate_wb_pre(Node* call, PhaseIterGV
   call->del_req(call->req()-1);
 }
 
-void ShenandoahBarrierSetC2::enqueue_useful_gc_barrier(PhaseIterGVN* igvn, Node* node) const {
+void ShenandoahBarrierSetC2::enqueue_useful_gc_barrier(Unique_Node_List &worklist, Node* node) const {
   if (node->Opcode() == Op_AddP && ShenandoahBarrierSetC2::has_only_shenandoah_wb_pre_uses(node)) {
-    igvn->add_users_to_worklist(node);
+    for (DUIterator_Fast imax, i = node->fast_outs(imax); i < imax; i++) {
+      Node* use = node->fast_out(i);
+      worklist.push(use);
+    }
   }
 }
 

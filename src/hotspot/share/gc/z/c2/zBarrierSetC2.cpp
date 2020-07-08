@@ -114,9 +114,9 @@ void ZBarrierSetC2::eliminate_useless_gc_barriers(Unique_Node_List &useful) cons
   }
 }
 
-void ZBarrierSetC2::enqueue_useful_gc_barrier(PhaseIterGVN* igvn, Node* node) const {
+void ZBarrierSetC2::enqueue_useful_gc_barrier(Unique_Node_List &worklist, Node* node) const {
   if (node->is_LoadBarrier() && !node->as_LoadBarrier()->has_true_uses()) {
-    igvn->_worklist.push(node);
+    worklist.push(node);
   }
 }
 
