@@ -2422,12 +2422,13 @@ void Compile::Optimize() {
     }
   }
 
-  print_method(PHASE_BEFORE_BARRIER_EXPAND, 2);
-
 #if INCLUDE_SHENANDOAHGC
-  if (UseShenandoahGC && ((ShenandoahBarrierSetC2*)BarrierSet::barrier_set()->barrier_set_c2())->expand_barriers(this, igvn)) {
-    assert(failing(), "must bail out w/ explicit message");
-    return;
+  if (UseShenandoahGC) {
+    print_method(PHASE_BEFORE_BARRIER_EXPAND, 2);
+    if (((ShenandoahBarrierSetC2*)BarrierSet::barrier_set()->barrier_set_c2())->expand_barriers(this, igvn)) {
+      assert(failing(), "must bail out w/ explicit message");
+      return;
+    }
   }
 #endif
 

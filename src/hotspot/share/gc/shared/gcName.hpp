@@ -39,7 +39,9 @@ enum GCName {
   G1Old,
   G1Full,
   Z,
+#if INCLUDE_SHENANDOAHGC
   Shenandoah,
+#endif
   NA,
   GCNameEndSentinel
 };
@@ -59,7 +61,9 @@ class GCNameHelper {
       case G1Old: return "G1Old";
       case G1Full: return "G1Full";
       case Z: return "Z";
+#if INCLUDE_SHENANDOAHGC
       case Shenandoah: return "Shenandoah";
+#endif
       case NA: return "N/A";
       default: ShouldNotReachHere(); return NULL;
     }

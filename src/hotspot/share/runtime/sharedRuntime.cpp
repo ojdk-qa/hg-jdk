@@ -2880,6 +2880,7 @@ JRT_ENTRY_NO_ASYNC(void, SharedRuntime::block_for_jni_critical(JavaThread* threa
   GCLocker::unlock_critical(thread);
 JRT_END
 
+#if INCLUDE_SHENANDOAHGC
 JRT_LEAF(oopDesc*, SharedRuntime::pin_object(JavaThread* thread, oopDesc* obj))
   assert(Universe::heap()->supports_object_pinning(), "Why we here?");
   assert(obj != NULL, "Should not be null");
@@ -2895,6 +2896,7 @@ JRT_LEAF(void, SharedRuntime::unpin_object(JavaThread* thread, oopDesc* obj))
   oop o(obj);
   Universe::heap()->unpin_object(thread, o);
 JRT_END
+#endif
 
 // -------------------------------------------------------------------------
 // Java-Java calling convention

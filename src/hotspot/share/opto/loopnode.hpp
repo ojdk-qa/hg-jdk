@@ -1285,10 +1285,10 @@ private:
   Node *place_near_use( Node *useblock ) const;
   Node* try_move_store_before_loop(Node* n, Node *n_ctrl);
   void try_move_store_after_loop(Node* n);
-public:
+SHENANDOAHGC_ONLY(public:)
   bool identical_backtoback_ifs(Node *n);
   bool can_split_if(Node *n_ctrl);
-private:
+SHENANDOAHGC_ONLY(private:)
 
   // Clone loop predicates to slow and fast loop when unswitching a loop
   Node* clone_loop_predicates(Node* old_entry, Node* new_entry, bool clone_limit_check, bool is_slow_loop,
@@ -1323,9 +1323,12 @@ public:
   static int _loop_invokes;     // Count of PhaseIdealLoop invokes
   static int _loop_work;        // Sum of PhaseIdealLoop x _unique
 #endif
+#if !defined(PRODUCT) || INCLUDE_SHENANDOAHGC
   void rpo( Node *start, Node_Stack &stk, VectorSet &visited, Node_List &rpo_list ) const;
-
+#endif
+#if INCLUDE_SHENANDOAHGC
   PhaseIterGVN& igvn() { return _igvn; }
+#endif
 };
 
 // This kit may be used for making of a reserved copy of a loop before this loop

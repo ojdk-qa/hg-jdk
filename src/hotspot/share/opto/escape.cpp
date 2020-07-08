@@ -2429,8 +2429,11 @@ Node* ConnectionGraph::get_addp_base(Node *addp) {
       assert(opcode == Op_ConP || opcode == Op_ThreadLocal ||
              opcode == Op_CastX2P || uncast_base->is_DecodeNarrowPtr() ||
              (uncast_base->is_Mem() && (uncast_base->bottom_type()->isa_rawptr() != NULL)) ||
-             (uncast_base->is_Proj() && uncast_base->in(0)->is_Allocate()) ||
-             uncast_base->Opcode() == Op_ShenandoahLoadReferenceBarrier, "sanity");
+             (uncast_base->is_Proj() && uncast_base->in(0)->is_Allocate())
+#if INCLUDE_SHENANDOAHGC
+             || uncast_base->Opcode() == Op_ShenandoahLoadReferenceBarrier
+#endif
+             , "sanity");
     }
   }
   return base;

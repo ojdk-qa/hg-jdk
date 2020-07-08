@@ -52,7 +52,9 @@ enum CompilerPhaseType {
   PHASE_MATCHING,
   PHASE_INCREMENTAL_INLINE,
   PHASE_INCREMENTAL_BOXING_INLINE,
+#if INCLUDE_SHENANDOAHGC
   PHASE_BEFORE_BARRIER_EXPAND,
+#endif
   PHASE_BEFORE_MACRO_EXPANSION,
   PHASE_END,
   PHASE_FAILURE,
@@ -90,7 +92,9 @@ class CompilerPhaseTypeHelper {
       case PHASE_MATCHING:                   return "After matching";
       case PHASE_INCREMENTAL_INLINE:         return "Incremental Inline";
       case PHASE_INCREMENTAL_BOXING_INLINE:  return "Incremental Boxing Inline";
+#if INCLUDE_SHENANDOAHGC
       case PHASE_BEFORE_BARRIER_EXPAND:      return "Before Barrier Expand";
+#endif
       case PHASE_BEFORE_MACRO_EXPANSION:     return "Before macro expansion";
       case PHASE_END:                        return "End";
       case PHASE_FAILURE:                    return "Failure";

@@ -43,7 +43,7 @@ GCName GCConfiguration::young_collector() const {
     return ParNew;
   }
 
-  if (UseZGC || UseShenandoahGC) {
+  if (UseZGC SHENANDOAHGC_ONLY(|| UseShenandoahGC)) {
     return NA;
   }
 
@@ -67,9 +67,11 @@ GCName GCConfiguration::old_collector() const {
     return Z;
   }
 
+#if INCLUDE_SHENANDOAHGC
   if (UseShenandoahGC) {
     return Shenandoah;
   }
+#endif
 
   return SerialOld;
 }
