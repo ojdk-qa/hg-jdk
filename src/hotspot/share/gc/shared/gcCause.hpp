@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_SHARED_GCCAUSE_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/macros.hpp"
 
 //
 // This class exposes implementation details of the various
@@ -78,10 +79,12 @@ class GCCause : public AllStatic {
 
     _dcmd_gc_run,
 
+#if INCLUDE_SHENANDOAHGC
     _shenandoah_stop_vm,
     _shenandoah_allocation_failure_evac,
     _shenandoah_concurrent_gc,
     _shenandoah_upgrade_to_full_gc,
+#endif
 
     _z_timer,
     _z_warmup,
@@ -126,8 +129,9 @@ class GCCause : public AllStatic {
     // _allocation_failure is the generic cause a collection for allocation failure
     // _adaptive_size_policy is for a collecton done before a full GC
     return (cause == GCCause::_allocation_failure ||
-            cause == GCCause::_adaptive_size_policy ||
-            cause == GCCause::_shenandoah_allocation_failure_evac);
+            cause == GCCause::_adaptive_size_policy
+            SHENANDOAHGC_ONLY(|| cause == GCCause::_shenandoah_allocation_failure_evac)
+            );
   }
 
   // Return a string describing the GCCause.

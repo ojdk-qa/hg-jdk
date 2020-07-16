@@ -25,9 +25,9 @@
 #define SHARE_VM_GC_SHENANDOAH_SHENANDOAHHEAP_INLINE_HPP
 
 #include "classfile/javaClasses.inline.hpp"
-#include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/shenandoah/markBitMap.inline.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"

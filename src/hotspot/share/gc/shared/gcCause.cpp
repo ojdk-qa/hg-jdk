@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcCause.hpp"
+#include "utilities/macros.hpp"
 
 const char* GCCause::to_string(GCCause::Cause cause) {
   switch (cause) {
@@ -105,6 +106,7 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _dcmd_gc_run:
       return "Diagnostic Command";
 
+#if INCLUDE_SHENANDOAHGC
     case _shenandoah_allocation_failure_evac:
       return "Allocation Failure During Evacuation";
 
@@ -116,6 +118,7 @@ const char* GCCause::to_string(GCCause::Cause cause) {
 
     case _shenandoah_upgrade_to_full_gc:
       return "Upgrade To Full GC";
+#endif
 
     case _z_timer:
       return "Timer";

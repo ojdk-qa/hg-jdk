@@ -26,13 +26,13 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
-#include "gc/shared/parallelCleaning.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "logging/log.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcTraceTime.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shenandoah/parallelCleaning.hpp"
 
 StringSymbolTableUnlinkTask::StringSymbolTableUnlinkTask(BoolObjectClosure* is_alive, bool process_strings, bool process_symbols) :
   AbstractGangTask("String/Symbol Unlinking"),

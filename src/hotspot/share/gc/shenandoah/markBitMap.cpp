@@ -25,7 +25,7 @@
 // Concurrent marking bit map wrapper
 
 #include "precompiled.hpp"
-#include "gc/shared/markBitMap.inline.hpp"
+#include "gc/shenandoah/markBitMap.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 MarkBitMapRO::MarkBitMapRO(int shifter) :
