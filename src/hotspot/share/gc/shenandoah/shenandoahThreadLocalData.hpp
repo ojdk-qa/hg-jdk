@@ -43,6 +43,7 @@ private:
   size_t _gclab_size;
   uint  _worker_id;
   bool _force_satb_flush;
+  double _paced_time;
 
   ShenandoahThreadLocalData() :
     _gc_state(0),
@@ -51,7 +52,8 @@ private:
     _gclab(NULL),
     _gclab_size(0),
     _worker_id(INVALID_WORKER_ID),
-    _force_satb_flush(false) {
+    _force_satb_flush(false),
+    _paced_time(0) {
   }
 
   ~ShenandoahThreadLocalData() {
@@ -137,6 +139,18 @@ public:
 
   static void set_gclab_size(Thread* thread, size_t v) {
     data(thread)->_gclab_size = v;
+  }
+
+  static void add_paced_time(Thread* thread, double v) {
+    data(thread)->_paced_time += v;
+  }
+
+  static double paced_time(Thread* thread) {
+    return data(thread)->_paced_time;
+  }
+
+  static void reset_paced_time(Thread* thread) {
+    data(thread)->_paced_time = 0;
   }
 
 #ifdef ASSERT
