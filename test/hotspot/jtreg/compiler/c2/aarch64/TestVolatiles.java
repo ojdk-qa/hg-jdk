@@ -106,7 +106,7 @@ public class TestVolatiles {
             argcount = 8;
             procArgs = new String[argcount];
             procArgs[argcount - 2] = "-XX:+UseShenandoahGC";
-            break;        
+            break;
         case "ShenandoahIU":
             argcount = 11;
             procArgs = new String[argcount];

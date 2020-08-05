@@ -77,8 +77,8 @@
                                     volatile_nonstatic_field,                                                                        \
                                     static_field))                                                                                   \
   SHENANDOAHGC_ONLY(VM_STRUCTS_SHENANDOAH(nonstatic_field,                                                                           \
-                               volatile_nonstatic_field,                                                                             \
-                               static_field))                                                                                        \
+                                          volatile_nonstatic_field,                                                                  \
+                                          static_field))                                                                             \
   ZGC_ONLY(VM_STRUCTS_ZGC(nonstatic_field,                                                                                           \
                           volatile_nonstatic_field,                                                                                  \
                           static_field))                                                                                             \
@@ -185,8 +185,8 @@
                                   declare_toplevel_type,                  \
                                   declare_integer_type))                  \
   SHENANDOAHGC_ONLY(VM_TYPES_SHENANDOAH(declare_type,                     \
-                             declare_toplevel_type,                       \
-                             declare_integer_type))                       \
+                                        declare_toplevel_type,            \
+                                        declare_integer_type))            \
   ZGC_ONLY(VM_TYPES_ZGC(declare_type,                                     \
                         declare_toplevel_type,                            \
                         declare_integer_type))                            \
@@ -263,7 +263,7 @@
   SERIALGC_ONLY(VM_INT_CONSTANTS_SERIALGC(declare_constant,                 \
                                           declare_constant_with_value))     \
   SHENANDOAHGC_ONLY(VM_INT_CONSTANTS_SHENANDOAH(declare_constant,           \
-                                     declare_constant_with_value))          \
+                                              declare_constant_with_value)) \
   ZGC_ONLY(VM_INT_CONSTANTS_ZGC(declare_constant,                           \
                                 declare_constant_with_value))               \
                                                                             \

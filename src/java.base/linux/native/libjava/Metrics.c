@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,27 +21,15 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_VM_GC_EPSILON_EPSILONMEMORYPOOL_HPP
-#define SHARE_VM_GC_EPSILON_EPSILONMEMORYPOOL_HPP
+#include "jni.h"
+#include "jvm.h"
 
-#include "gc/epsilon/epsilonHeap.hpp"
-#include "services/memoryPool.hpp"
-#include "services/memoryUsage.hpp"
-#include "utilities/macros.hpp"
+#include "jdk_internal_platform_cgroupv1_Metrics.h"
 
-class EpsilonMemoryPool : public CollectedMemoryPool {
-private:
-  EpsilonHeap* _heap;
-
-public:
-  EpsilonMemoryPool(EpsilonHeap* heap);
-  size_t committed_in_bytes() { return _heap->capacity();     }
-  size_t used_in_bytes()      { return _heap->used();         }
-  size_t max_size()     const { return _heap->max_capacity(); }
-  MemoryUsage get_memory_usage();
-};
-
-#endif // SHARE_VM_GC_EPSILON_EPSILONMEMORYPOOL_HPP
+JNIEXPORT jboolean JNICALL
+Java_jdk_internal_platform_cgroupv1_Metrics_isUseContainerSupport(JNIEnv *env, jclass ignored)
+{
+    return JVM_IsUseContainerSupport();
+}

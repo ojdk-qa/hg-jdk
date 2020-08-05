@@ -2249,7 +2249,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
           // pin before unpack
           if (UseShenandoahGC) {
             assert(pinned_slot <= stack_slots, "overflow");
-	    ShenandoahBarrierSet::assembler()->pin_critical_native_array(masm, in_regs[i], pinned_slot);
+            ShenandoahBarrierSet::assembler()->pin_critical_native_array(masm, in_regs[i], pinned_slot);
             pinned_args.append(i);
           }
 #endif
@@ -2479,7 +2479,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       for (int index = 0; index < pinned_args.length(); index ++) {
         int i = pinned_args.at(index);
         assert(pinned_slot <= stack_slots, "overflow");
-	ShenandoahBarrierSet::assembler()->unpin_critical_native_array(masm, in_regs[i], pinned_slot);
+        ShenandoahBarrierSet::assembler()->unpin_critical_native_array(masm, in_regs[i], pinned_slot);
       }
       restore_native_result(masm, ret_type, stack_slots);
     }

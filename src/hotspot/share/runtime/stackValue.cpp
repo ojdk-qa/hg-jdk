@@ -111,9 +111,9 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
       }
       // Decode narrowoop
       oop val = CompressedOops::decode(value.noop);
-      // Deoptimization must make sure all oops have passed load barriers
 #if INCLUDE_SHENANDOAHGC
       if (UseShenandoahGC) {
+        // Deoptimization must make sure all oops have passed load barriers
         val = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(val);
       }
 #endif
@@ -133,7 +133,7 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
       }
 #endif
 #if INCLUDE_ZGC
-      // Deoptimization must make sure all oop have passed load barriers
+      // Deoptimization must make sure all oop have passed load barrier
       if (UseZGC) {
         val = ZBarrier::load_barrier_on_oop_field_preloaded((oop*)value_addr, val);
       }

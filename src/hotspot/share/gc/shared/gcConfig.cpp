@@ -60,13 +60,13 @@ struct SupportedGC {
       _flag(flag), _name(name), _arguments(arguments), _hs_err_name(hs_err_name) {}
 };
 
-       CMSGC_ONLY(static CMSArguments      cmsArguments;)
-   EPSILONGC_ONLY(static EpsilonArguments  epsilonArguments;)
-        G1GC_ONLY(static G1Arguments       g1Arguments;)
-  PARALLELGC_ONLY(static ParallelArguments parallelArguments;)
-    SERIALGC_ONLY(static SerialArguments   serialArguments;)
+       CMSGC_ONLY(static CMSArguments        cmsArguments;)
+   EPSILONGC_ONLY(static EpsilonArguments    epsilonArguments;)
+        G1GC_ONLY(static G1Arguments         g1Arguments;)
+  PARALLELGC_ONLY(static ParallelArguments   parallelArguments;)
+    SERIALGC_ONLY(static SerialArguments     serialArguments;)
 SHENANDOAHGC_ONLY(static ShenandoahArguments shenandoahArguments;)
-         ZGC_ONLY(static ZArguments        zArguments;)
+         ZGC_ONLY(static ZArguments          zArguments;)
 
 // Table of supported GCs, for translating between command
 // line flag, CollectedHeap::Name and GCArguments instance.
@@ -95,15 +95,15 @@ GCArguments* GCConfig::_arguments = NULL;
 bool GCConfig::_gc_selected_ergonomically = false;
 
 void GCConfig::fail_if_unsupported_gc_is_selected() {
-  NOT_CMSGC(       FAIL_IF_SELECTED(UseConcMarkSweepGC, true));
-  NOT_EPSILONGC(   FAIL_IF_SELECTED(UseEpsilonGC,       true));
-  NOT_G1GC(        FAIL_IF_SELECTED(UseG1GC,            true));
-  NOT_PARALLELGC(  FAIL_IF_SELECTED(UseParallelGC,      true));
-  NOT_PARALLELGC(  FAIL_IF_SELECTED(UseParallelOldGC,   true));
-  NOT_SERIALGC(    FAIL_IF_SELECTED(UseSerialGC,        true));
-  NOT_SERIALGC(    FAIL_IF_SELECTED(UseParallelOldGC,   false));
-  NOT_SHENANDOAHGC(FAIL_IF_SELECTED(UseShenandoahGC,    true));
-  NOT_ZGC(         FAIL_IF_SELECTED(UseZGC,             true));
+  NOT_CMSGC(     FAIL_IF_SELECTED(UseConcMarkSweepGC, true));
+  NOT_EPSILONGC( FAIL_IF_SELECTED(UseEpsilonGC,       true));
+  NOT_G1GC(      FAIL_IF_SELECTED(UseG1GC,            true));
+  NOT_PARALLELGC(FAIL_IF_SELECTED(UseParallelGC,      true));
+  NOT_PARALLELGC(FAIL_IF_SELECTED(UseParallelOldGC,   true));
+  NOT_SERIALGC(  FAIL_IF_SELECTED(UseSerialGC,        true));
+  NOT_SERIALGC(  FAIL_IF_SELECTED(UseParallelOldGC,   false));
+  NOT_SHENANDOAHGC(FAIL_IF_SELECTED(UseShenandoahGC,  true));
+  NOT_ZGC(       FAIL_IF_SELECTED(UseZGC,             true));
 }
 
 void GCConfig::select_gc_ergonomically() {

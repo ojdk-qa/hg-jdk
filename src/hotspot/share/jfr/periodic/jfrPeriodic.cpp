@@ -578,11 +578,11 @@ TRACE_REQUEST_FUNC(CodeSweeperConfiguration) {
   event.commit();
 }
 
-TRACE_REQUEST_FUNC(ShenandoahHeapRegionInformation) {
 #if INCLUDE_SHENANDOAHGC
+TRACE_REQUEST_FUNC(ShenandoahHeapRegionInformation) {
   if (UseShenandoahGC) {
     VM_ShenandoahSendHeapRegionInfoEvents op;
     VMThread::execute(&op);
   }
-#endif
 }
+#endif

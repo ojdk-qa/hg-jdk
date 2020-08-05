@@ -568,7 +568,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
           // Ignore such stores to be able scalar replace non-escaping
           // allocations.
 #if INCLUDE_G1GC || INCLUDE_SHENANDOAHGC
-          if ((UseG1GC || UseShenandoahGC) && adr->is_AddP()) {
+          if ((UseG1GC SHENANDOAHGC_ONLY(|| UseShenandoahGC)) && adr->is_AddP()) {
             Node* base = get_addp_base(adr);
             if (base->Opcode() == Op_LoadP &&
                 base->in(MemNode::Address)->is_AddP()) {
@@ -587,9 +587,11 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
                 if (offs == buf_offset) {
                   break; // G1 pre barrier previous oop value store.
                 }
+#if INCLUDE_G1GC
                 if (offs == in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset())) {
                   break; // G1 post barrier card address store.
                 }
+#endif
               }
             }
           }
@@ -2432,7 +2434,7 @@ Node* ConnectionGraph::get_addp_base(Node *addp) {
              opcode == Op_CastX2P || uncast_base->is_DecodeNarrowPtr() ||
              (uncast_base->is_Mem() && (uncast_base->bottom_type()->isa_rawptr() != NULL)) ||
              (uncast_base->is_Proj() && uncast_base->in(0)->is_Allocate())
-             SHENANDOAHGC_ONLY(|| (uncast_base->Opcode() == Op_ShenandoahLoadReferenceBarrier))
+             SHENANDOAHGC_ONLY(|| uncast_base->Opcode() == Op_ShenandoahLoadReferenceBarrier)
              , "sanity");
     }
   }

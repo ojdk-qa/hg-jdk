@@ -48,6 +48,12 @@
 #include "gc/z/z_globals.hpp"
 #endif
 
+#if INCLUDE_SHENANDOAHGC
+#define shproduct(product, type, name, value, doc) product(type, name, value, doc)
+#else
+#define shproduct(product, type, name, value, doc)
+#endif
+
 #define GC_FLAGS(develop,                                                   \
                  develop_pd,                                                \
                  product,                                                   \
@@ -198,7 +204,7 @@
   experimental(bool, UseZGC, false,                                         \
           "Use the Z garbage collector")                                    \
                                                                             \
-  product(bool, UseShenandoahGC, false,                                     \
+  shproduct(product, bool, UseShenandoahGC, false,                          \
           "Use the Shenandoah garbage collector")                           \
                                                                             \
   product(uint, ParallelGCThreads, 0,                                       \

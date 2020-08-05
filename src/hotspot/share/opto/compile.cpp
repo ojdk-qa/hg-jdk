@@ -3911,7 +3911,7 @@ void Compile::verify_graph_edges(bool no_dead_code) {
 // - G1 pre-barriers (see GraphKit::g1_write_barrier_pre())
 void Compile::verify_barriers() {
 #if INCLUDE_G1GC || INCLUDE_SHENANDOAHGC
-  if (UseG1GC || UseShenandoahGC) {
+  if (UseG1GC SHENANDOAHGC_ONLY(|| UseShenandoahGC)) {
     // Verify G1 pre-barriers
 
 #if INCLUDE_G1GC && INCLUDE_SHENANDOAHGC

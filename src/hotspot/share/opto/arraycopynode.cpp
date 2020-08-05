@@ -513,8 +513,8 @@ bool ArrayCopyNode::finish_transform(PhaseGVN *phase, bool can_reshape,
   } else {
     if (in(TypeFunc::Control) != ctl) {
       // we can't return new memory and control from Ideal at parse time
-      assert(!is_clonebasic() || UseShenandoahGC, "added control for clone?");
-      phase->record_for_igvn(this);
+      assert(!is_clonebasic() SHENANDOAHGC_ONLY(|| UseShenandoahGC), "added control for clone?");
+      SHENANDOAHGC_ONLY(phase->record_for_igvn(this);)
       return false;
     }
   }
