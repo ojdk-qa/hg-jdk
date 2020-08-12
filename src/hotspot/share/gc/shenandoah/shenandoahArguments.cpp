@@ -31,6 +31,15 @@
 #include "utilities/defaultStream.hpp"
 
 void ShenandoahArguments::initialize() {
+  log_warning(gc)("**************************************************************************");
+  log_warning(gc)("*  Shenandoah/JDK 11 is now maintained in upstream OpenJDK 11.           *");
+  log_warning(gc)("*  This JDK would not get security, functionality or performance fixes.  *");
+  log_warning(gc)("*  Use this build at your own risk.                                      *");
+  log_warning(gc)("*                                                                        *");
+  log_warning(gc)("*  For the latest version, use the most recent OpenJDK 11 update release *");
+  log_warning(gc)("*  from the vendor that has Shenandoah enabled in their builds.          *");
+  log_warning(gc)("**************************************************************************");
+
 #if !(defined AARCH64 || defined AMD64 || defined IA32)
   vm_exit_during_initialization("Shenandoah GC is not supported on this platform.");
 #endif
